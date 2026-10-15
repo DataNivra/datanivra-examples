@@ -1,4 +1,4 @@
-# yaml-language-server: $schema=../../packages/contracts/schemas/v1/manifests/test-data-request.schema.json
+# yaml-language-server: $schema=https://www.datanivra.com/schemas/v1/manifests/test-data-request.schema.json
 # TestDataRequest manifest (ADR-0018). It pins an APPROVED profile version and chooses nothing
 # else: sources, targets, masking/certification policies and the approval envelope all live in
 # the second-person-approved profile `claims-pr-regression` version 1. Synthetic placeholders.

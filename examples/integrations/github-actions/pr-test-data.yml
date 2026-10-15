@@ -49,7 +49,7 @@ jobs:
 
       - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6
 
-      - name: Install the DataNivra CLI (release assets; not on PyPI)
+      - name: Install the DataNivra CLI (datanivra-cli from PyPI, pinned)
         run: |
           uv tool install datanivra-cli==0.1.0
           echo "DATANIVRA_CONFIG_DIR=$RUNNER_TEMP/datanivra" >> "$GITHUB_ENV"

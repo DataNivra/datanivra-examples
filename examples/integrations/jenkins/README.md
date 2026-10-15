@@ -10,7 +10,7 @@ short-lived DataNivra session token from the Jenkins credential `datanivra-sessi
 it in the console log; never `echo` it.
 
 **Prerequisites:** agent labelled `datanivra-ci` reaching the profile's targets; the `datanivra`
-CLI installed from your release assets; an approved profile.
+CLI installed from PyPI (`pipx install datanivra-cli==0.1.0`); an approved profile.
 
 **Every run:** request (`--idempotency-key` derived from `BUILD_TAG`, so a replayed stage gets the
 same request) → wait → tests → `post { always { release } }` (success, failure, abort).

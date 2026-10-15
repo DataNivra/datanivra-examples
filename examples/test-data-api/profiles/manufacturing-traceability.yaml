@@ -1,4 +1,4 @@
-# yaml-language-server: $schema=../../../packages/contracts/schemas/v1/manifests/test-data-profile.schema.json
+# yaml-language-server: $schema=https://www.datanivra.com/schemas/v1/manifests/test-data-profile.schema.json
 # DataNivra test-data-profile manifest (apiVersion datanivra.io/v1alpha1). Validate: datanivra test-data validate <file>
 # Placeholder ids (00000000-0000-4000-8000-0000000000NN): replace with your ids.
 # 01 = approved target environment, 11 = certified dataset, 21 = customer agent,

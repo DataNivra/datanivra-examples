@@ -16,7 +16,7 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Install the DataNivra CLI (release assets; not on PyPI)
+          name: Install the DataNivra CLI (datanivra-cli from PyPI, pinned)
           command: python3 -m pip install --quiet datanivra-cli==0.1.0
       - run:
           name: Request test data and wait until READY

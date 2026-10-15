@@ -5,7 +5,7 @@
 // DataNivra session token in the Jenkins credential `datanivra-session-token`, refreshed for the
 // run by a process your security team approves. Treat it as a secret; it is never echoed.
 //
-// Requires: the `datanivra` CLI on the agent (wheels from your release assets, not on PyPI), a
+// Requires: the `datanivra` CLI on the agent (`pipx install datanivra-cli==0.1.0` from PyPI), a
 // Jenkins agent labelled `datanivra-ci` that can reach the approved target databases, and an
 // approved profile `claims-pr-regression` v1. The request, not Jenkins, decides what data exists.
 pipeline {

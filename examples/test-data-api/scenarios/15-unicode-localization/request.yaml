@@ -1,4 +1,4 @@
-# yaml-language-server: $schema=../../../../packages/contracts/schemas/v1/manifests/test-data-request.schema.json
+# yaml-language-server: $schema=https://www.datanivra.com/schemas/v1/manifests/test-data-request.schema.json
 # DataNivra test-data-request manifest (apiVersion datanivra.io/v1alpha1). Validate: datanivra test-data validate <file>
 apiVersion: datanivra.io/v1alpha1
 kind: TestDataRequest
