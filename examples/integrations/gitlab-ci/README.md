@@ -5,7 +5,7 @@ the real CLI parser); not run on GitLab by this repository.
 
 **Prerequisites:** a runner tagged `datanivra-ci` that can reach the profile's targets; CI/CD
 variables `DATANIVRA_BASE_URL`, `DATANIVRA_TENANT`, `DATANIVRA_WORKLOAD_IDENTITY_ID`,
-`DATANIVRA_WHEELS_URL`, masked `APP_DB_DSN`.
+masked `APP_DB_DSN`.
 
 **One-time (administrators):**
 ```bash

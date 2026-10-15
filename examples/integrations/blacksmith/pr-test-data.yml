@@ -27,7 +27,6 @@ jobs:
       DATANIVRA_TENANT: ${{ vars.DATANIVRA_TENANT }}
       DATANIVRA_WORKLOAD_IDENTITY_ID: ${{ vars.DATANIVRA_WORKLOAD_IDENTITY_ID }}
       DATANIVRA_AUDIENCE: ${{ vars.DATANIVRA_AUDIENCE }}
-      DATANIVRA_WHEELS_URL: ${{ vars.DATANIVRA_WHEELS_URL }}
       APP_DB_DSN: ${{ secrets.APP_DB_DSN }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
@@ -36,7 +35,7 @@ jobs:
 
       - name: Install the DataNivra CLI and sign in with the job's OIDC token
         run: |
-          uv tool install --find-links "$DATANIVRA_WHEELS_URL" datanivra-cli
+          uv tool install datanivra-cli==0.1.0
           echo "DATANIVRA_CONFIG_DIR=$RUNNER_TEMP/datanivra" >> "$GITHUB_ENV"
           export DATANIVRA_CONFIG_DIR="$RUNNER_TEMP/datanivra"
           datanivra login --workload-identity "$DATANIVRA_WORKLOAD_IDENTITY_ID" --tenant "$DATANIVRA_TENANT" --audience "$DATANIVRA_AUDIENCE" --make-default

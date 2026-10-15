@@ -6,7 +6,7 @@ command parsed by the real CLI parser, actionlint); not run on GitHub by this re
 
 **Prerequisites:** self-hosted runner labelled `datanivra-ci` that can reach the profile's targets;
 repository variables `DATANIVRA_BASE_URL`, `DATANIVRA_TENANT`, `DATANIVRA_WORKLOAD_IDENTITY_ID`,
-`DATANIVRA_AUDIENCE`, `DATANIVRA_WHEELS_URL`; secret `APP_DB_DSN` (the runner's own target access).
+`DATANIVRA_AUDIENCE`; secret `APP_DB_DSN` (the runner's own target access).
 
 **Permissions:** `contents: read` at the top; `id-token: write` only on the two jobs that sign in.
 The trust should allow `refs/pull/*` (PR runs) and never `pull_request_target`, which DataNivra

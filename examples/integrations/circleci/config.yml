@@ -17,7 +17,7 @@ jobs:
       - checkout
       - run:
           name: Install the DataNivra CLI (release assets; not on PyPI)
-          command: python3 -m pip install --quiet --find-links "$DATANIVRA_WHEELS_URL" datanivra-cli
+          command: python3 -m pip install --quiet datanivra-cli==0.1.0
       - run:
           name: Request test data and wait until READY
           command: |

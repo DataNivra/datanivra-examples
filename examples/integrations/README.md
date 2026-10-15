@@ -19,8 +19,8 @@ partnerships. Every value in them is a synthetic placeholder (`acme/claims-servi
    Workload identity and automatic approval are **off by default** and enabled by the DataNivra
    operator only after owner approval. Without automatic approval, requests wait for a human
    (`datanivra test-data approve`); the recipes then end with exit code 25 when they time out.
-3. The CLI (`datanivra-cli`) and SDK wheels from your DataNivra release assets — the packages are
-   **not published** to PyPI or npm.
+3. The CLI from PyPI. The recipes install `datanivra-cli==0.1.0` themselves (pin the version
+   you have tested; SDKs: `pip install datanivra-sdk`, `npm install @datanivra/sdk`).
 
 The repeatable part (every run) is what the recipes show. The shared manifest is
 [`request.yaml`](request.yaml) (JSON twin: [`request.json`](request.json)); validate it with

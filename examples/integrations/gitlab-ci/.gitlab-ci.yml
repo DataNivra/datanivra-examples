@@ -11,7 +11,7 @@
 # enabled workload identity (owner-gated, OFF by default).
 #
 # CI/CD variables: DATANIVRA_BASE_URL, DATANIVRA_TENANT, DATANIVRA_WORKLOAD_IDENTITY_ID,
-# DATANIVRA_WHEELS_URL (CLI/SDK wheels from your release assets), APP_DB_DSN (masked; the runner's
+# APP_DB_DSN (masked; the runner's
 # own access to the approved target). The runner must reach the approved targets (tag datanivra-ci).
 #
 # GitLab issues ONE id token per job and DataNivra accepts each token once, so the release in
@@ -32,7 +32,7 @@ datanivra-integration-tests:
   variables:
     DATANIVRA_CONFIG_DIR: $CI_PROJECT_DIR/.datanivra-config
   before_script:
-    - pip install --quiet --find-links "$DATANIVRA_WHEELS_URL" datanivra-cli
+    - pip install --quiet datanivra-cli==0.1.0
     - datanivra login --workload-identity "$DATANIVRA_WORKLOAD_IDENTITY_ID" --tenant "$DATANIVRA_TENANT" --audience datanivra:acme --make-default
   script:
     - datanivra test-data request .datanivra/request.yaml --ci-from-env -o json > request.json

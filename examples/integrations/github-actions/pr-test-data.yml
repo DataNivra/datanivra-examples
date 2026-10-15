@@ -12,9 +12,8 @@
 #     automatic approval the request waits for a human (exit 25 when --timeout elapses);
 #   * a runner that can reach the approved target databases (self-hosted, in your network);
 #   * repository variables: DATANIVRA_BASE_URL, DATANIVRA_TENANT, DATANIVRA_WORKLOAD_IDENTITY_ID,
-#     DATANIVRA_AUDIENCE, DATANIVRA_WHEELS_URL (CLI/SDK wheels from your DataNivra release assets:
-#     the packages are not published to PyPI); secret APP_DB_DSN (the runner's own access to the
-#     approved target — DataNivra never returns credentials).
+#     DATANIVRA_AUDIENCE; secret APP_DB_DSN (the runner's own access to the approved target —
+#     DataNivra never returns credentials). The CLI comes from PyPI (datanivra-cli, pinned).
 #
 # Values reach scripts through `env:` and quoted shell variables, never `${{ }}` inside `run:`.
 # Third-party actions are pinned by full commit SHA. Nothing printed here contains rows or tokens.
@@ -44,7 +43,6 @@ jobs:
       DATANIVRA_TENANT: ${{ vars.DATANIVRA_TENANT }}
       DATANIVRA_WORKLOAD_IDENTITY_ID: ${{ vars.DATANIVRA_WORKLOAD_IDENTITY_ID }}
       DATANIVRA_AUDIENCE: ${{ vars.DATANIVRA_AUDIENCE }}
-      DATANIVRA_WHEELS_URL: ${{ vars.DATANIVRA_WHEELS_URL }}
       APP_DB_DSN: ${{ secrets.APP_DB_DSN }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
@@ -53,7 +51,7 @@ jobs:
 
       - name: Install the DataNivra CLI (release assets; not on PyPI)
         run: |
-          uv tool install --find-links "$DATANIVRA_WHEELS_URL" datanivra-cli
+          uv tool install datanivra-cli==0.1.0
           echo "DATANIVRA_CONFIG_DIR=$RUNNER_TEMP/datanivra" >> "$GITHUB_ENV"
 
       - name: Sign in with this job's OIDC token
@@ -94,14 +92,13 @@ jobs:
       DATANIVRA_TENANT: ${{ vars.DATANIVRA_TENANT }}
       DATANIVRA_WORKLOAD_IDENTITY_ID: ${{ vars.DATANIVRA_WORKLOAD_IDENTITY_ID }}
       DATANIVRA_AUDIENCE: ${{ vars.DATANIVRA_AUDIENCE }}
-      DATANIVRA_WHEELS_URL: ${{ vars.DATANIVRA_WHEELS_URL }}
       PR_NUMBER: ${{ github.event.pull_request.number }}
     steps:
       - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6
 
       - name: Release every live request of this pull request (idempotent)
         run: |
-          uv tool install --find-links "$DATANIVRA_WHEELS_URL" datanivra-cli
+          uv tool install datanivra-cli==0.1.0
           export DATANIVRA_CONFIG_DIR="$RUNNER_TEMP/datanivra"
           datanivra login --workload-identity "$DATANIVRA_WORKLOAD_IDENTITY_ID" --tenant "$DATANIVRA_TENANT" --audience "$DATANIVRA_AUDIENCE" --make-default
           datanivra test-data list --all -o json > "$RUNNER_TEMP/requests.json"

@@ -9,7 +9,7 @@ token in the secret variable `DATANIVRA_TOKEN` (variable group `datanivra`), pas
 `env:` only (secret variables are not exposed to scripts otherwise and are masked in logs).
 
 **Prerequisites:** self-hosted agent pool `datanivra-ci` reaching the profile's targets; the CLI
-from your release assets (`DATANIVRA_WHEELS_URL`); an approved profile.
+(`datanivra-cli` from PyPI, installed by the pipeline); an approved profile.
 
 **Every run:** request (idempotency key from `Build.BuildId` + `System.JobAttempt`) → wait → tests →
 release with `condition: always()` (success, failure, cancellation).

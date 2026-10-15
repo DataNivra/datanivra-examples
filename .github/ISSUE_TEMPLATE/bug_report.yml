@@ -21,7 +21,7 @@ body:
     attributes:
       label: Versions
       description: Release of this repository (tag or commit) and the DataNivra agent version you used.
-      placeholder: v0.1.0, agent 0.4.3
+      placeholder: v0.1.0, agent 0.4.4
     validations:
       required: true
   - type: textarea

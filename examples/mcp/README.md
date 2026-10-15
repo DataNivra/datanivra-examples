@@ -1,7 +1,7 @@
 # Local MCP adapter for the DataNivra Test Data API (example)
 
 **Status:** implemented & tested in this repository; **local stdio only** — there is no hosted or
-remote DataNivra MCP endpoint (owner decision D-05). Not published to a package registry (D-04).
+remote DataNivra MCP endpoint (owner decision D-05). Install: `pip install datanivra-mcp`.
 This is a generic Model Context Protocol server; it is **not** a claimed integration with any
 specific agent product, and no partnership is implied.
 

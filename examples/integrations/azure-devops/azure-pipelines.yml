@@ -6,7 +6,7 @@
 # DATANIVRA_TOKEN (variable group `datanivra`), refreshed for the run by an approved process.
 #
 # Requires: a self-hosted agent pool `datanivra-ci` that can reach the approved targets, the
-# `datanivra` CLI (wheels from your release assets: DATANIVRA_WHEELS_URL), and an approved profile.
+# `datanivra` CLI (datanivra-cli from PyPI, installed below), and an approved profile.
 trigger: none
 pr:
   branches:
@@ -21,7 +21,7 @@ variables:
     value: https://api.example.test
 
 steps:
-  - script: python3 -m pip install --quiet --find-links "$DATANIVRA_WHEELS_URL" datanivra-cli
+  - script: python3 -m pip install --quiet datanivra-cli==0.1.0
     displayName: Install the DataNivra CLI
 
   - script: |

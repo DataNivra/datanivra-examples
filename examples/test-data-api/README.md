@@ -13,8 +13,8 @@ the approved target, and release the data afterwards.
   PostgreSQL and directory targets only (`CONNECTOR_CAPABILITIES`).
 * **Placeholder ids** in `profiles/*.yaml` look like `00000000-0000-4000-8000-0000000000NN`: replace them with
   your environment, dataset, agent and workload-identity ids.
-* **Availability:** the SDKs and CLI are not published to npm/PyPI yet (install from a release or from
-  source). CI workload identity and automatic approval are off by default and need operator and tenant
+* **Availability:** the CLI and SDKs are on PyPI and npm (`pipx install datanivra-cli`,
+  `pip install datanivra-sdk`, `npm install @datanivra/sdk`). CI workload identity and automatic approval are off by default and need operator and tenant
   enablement (see the [automatic approval guide](https://www.datanivra.com/docs/automatic-approval)); without them, CI requests wait for a human approver.
 
 ## Status labels

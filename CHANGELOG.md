@@ -6,4 +6,4 @@ All notable changes to this repository are listed here. Versions follow
 ## Unreleased
 
 - Initial public version, exported from DataNivra's reviewed examples. Written for DataNivra
-  agent 0.4.3 and API v1.
+  agent 0.4.4 and API v1.
