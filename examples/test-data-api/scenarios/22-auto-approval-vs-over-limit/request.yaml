@@ -1,0 +1,12 @@
+# yaml-language-server: $schema=../../../../packages/contracts/schemas/v1/manifests/test-data-request.schema.json
+# DataNivra test-data-request manifest (apiVersion datanivra.io/v1alpha1). Validate: datanivra test-data validate <file>
+apiVersion: datanivra.io/v1alpha1
+kind: TestDataRequest
+metadata:
+  name: over-envelope
+spec:
+  profile: { name: healthcare-integration, version: 1 }
+  scenarios:
+    - { scenario_code: HC_ROUTINE_CARE, count: 500 }
+    - { scenario_code: HC_CHRONIC_CARE, count: 2000 }
+    - { scenario_code: HC_CLAIM_DENIALS, count: 200 }

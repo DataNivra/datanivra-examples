@@ -1,0 +1,70 @@
+# yaml-language-server: $schema=../../../packages/contracts/schemas/v1/manifests/test-data-profile.schema.json
+# DataNivra test-data-profile manifest (apiVersion datanivra.io/v1alpha1). Validate: datanivra test-data validate <file>
+# Placeholder ids (00000000-0000-4000-8000-0000000000NN): replace with your ids.
+# 01 = approved target environment, 11 = certified dataset, 21 = customer agent,
+# 99 = workload identity trust (datanivra workload-identities list).
+apiVersion: datanivra.io/v1alpha1
+kind: TestDataProfile
+metadata:
+  name: banking-regression
+  description: Synthetic accounts, payments and their failure modes
+spec:
+  fulfilment: BUILD_DATASET
+  build:
+    business_domain: accounts and payments
+    pack_id: financial-services
+    dataset_kind: SYNTHETIC_ONLY
+    target_environment_id: 00000000-0000-4000-8000-000000000001
+    retention_days: 1
+    max_total_records: 3000
+    scenarios:
+      - {
+          pack_id: financial-services,
+          scenario_code: FS_EVERYDAY_BANKING,
+          kind: NORMAL,
+          default_count: 1000,
+          max_count: 2000,
+        }
+      - {
+          pack_id: financial-services,
+          scenario_code: FS_FAILED_PAYMENTS,
+          kind: RARE,
+          default_count: 100,
+          max_count: 500,
+        }
+      - {
+          pack_id: financial-services,
+          scenario_code: FS_DUPLICATE_TRANSACTIONS,
+          kind: DUPLICATE,
+          default_count: 50,
+          max_count: 200,
+          included_by_default: false,
+        }
+      - {
+          pack_id: financial-services,
+          scenario_code: FS_CHARGEBACKS,
+          kind: RARE,
+          default_count: 50,
+          max_count: 200,
+          included_by_default: false,
+        }
+      - {
+          pack_id: financial-services,
+          scenario_code: FS_RECONCILIATION_BREAKS,
+          kind: RARE,
+          default_count: 50,
+          max_count: 200,
+          included_by_default: false,
+        }
+      - {
+          pack_id: financial-services,
+          scenario_code: FS_BALANCE_BOUNDARIES,
+          kind: BOUNDARY,
+          default_count: 50,
+          max_count: 200,
+          included_by_default: false,
+        }
+  automation:
+    workload_identity_ids: [00000000-0000-4000-8000-000000000099]
+    max_total_records: 1500
+    escalate_out_of_envelope: false

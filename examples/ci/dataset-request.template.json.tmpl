@@ -1,0 +1,16 @@
+{
+  "title": "CI orders dataset",
+  "business_domain": "orders",
+  "dataset_kind": "MASKED_PRODUCTION_LIKE",
+  "source_ids": ["<SOURCE_ID>"],
+  "subset": {
+    "id": "<NEW_UUID>",
+    "name": "All synthetic customers with their orders",
+    "root_entity": { "source_id": "<SOURCE_ID>", "schema_name": "crm", "table_name": "customer" },
+    "strategy": "PERCENTAGE",
+    "percentage": 1.0
+  },
+  "masking_policy": { "policy_id": "<POLICY_ID>", "kind": "MASKING", "version": 1, "checksum": "<CHECKSUM>" },
+  "certification_policy": { "policy_id": "<POLICY_ID>", "kind": "CERTIFICATION", "version": 1, "checksum": "<CHECKSUM>" },
+  "retention_days": 1
+}

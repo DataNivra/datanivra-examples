@@ -1,0 +1,40 @@
+name: Bug in an example or template
+description: Something in this repository does not work as documented.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report. **Do not paste real data, credentials, tokens, connection strings or
+        logs containing personal data.** Reproduce with synthetic data. Security problems go to a
+        private security advisory, not here. Account, billing and production support: see SUPPORT.md.
+  - type: input
+    id: example
+    attributes:
+      label: Example or file
+      description: Path of the example, template or action in this repository.
+      placeholder: ci/datanivra_ci.py
+    validations:
+      required: true
+  - type: input
+    id: versions
+    attributes:
+      label: Versions
+      description: Release of this repository (tag or commit) and the DataNivra agent version you used.
+      placeholder: v0.1.0, agent 0.4.3
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened, and what did you expect?
+      description: Include the exact command and the reason code or exit code. Remove any identifiers of your systems.
+    validations:
+      required: true
+  - type: checkboxes
+    id: synthetic
+    attributes:
+      label: Data and secrets
+      options:
+        - label: This report contains no real personal, customer or production data and no secrets.
+          required: true

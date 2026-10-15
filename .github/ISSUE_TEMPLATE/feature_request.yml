@@ -1,0 +1,30 @@
+name: Example or template request
+description: Suggest a new example, recipe or improvement for this repository.
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This repository is maintained on a best-effort basis; we read every request but cannot promise
+        to implement it. Product feature requests are welcome through https://www.datanivra.com/contact.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to do?
+      description: The workflow or question the example should cover (CI system, database, deployment target...).
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What would help?
+      description: The example, template or change you have in mind.
+    validations:
+      required: false
+  - type: checkboxes
+    id: synthetic
+    attributes:
+      label: Data and secrets
+      options:
+        - label: This request contains no real personal, customer or production data and no secrets.
+          required: true

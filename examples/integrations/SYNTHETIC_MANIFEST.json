@@ -1,0 +1,8 @@
+{
+  "synthetic": true,
+  "generator": "hand-written CI/CD recipes for the Test Data API (ADR-0018)",
+  "seed": 0,
+  "description": "CI pipeline definitions and TestDataRequest manifests. Placeholder repository (acme/claims-service), audience (datanivra:acme), profile name, ticket key (QA-1234), example URLs (api.example.test) and secret/variable NAMES only. No rows, people, customers, tokens or credentials.",
+  "expected_detector_hits": ["CREDENTIAL_ASSIGNMENT"],
+  "expected_detector_hits_reason": "Reviewed: the hits are pipeline syntax, not values - GitHub's required `id-token: write` permission and `DATANIVRA_TOKEN: $(DATANIVRA_TOKEN)`-style mappings of a CI secret variable NAME into a step's environment."
+}

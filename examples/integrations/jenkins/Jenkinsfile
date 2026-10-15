@@ -1,0 +1,47 @@
+// Example Jenkins declarative pipeline (ADR-0018) — ILLUSTRATIVE, static-validated only.
+//
+// DataNivra workload identity trusts accept GitHub Actions and GitLab CI tokens only, and there
+// is no long-lived DataNivra service credential. This pipeline therefore expects a SHORT-LIVED
+// DataNivra session token in the Jenkins credential `datanivra-session-token`, refreshed for the
+// run by a process your security team approves. Treat it as a secret; it is never echoed.
+//
+// Requires: the `datanivra` CLI on the agent (wheels from your release assets, not on PyPI), a
+// Jenkins agent labelled `datanivra-ci` that can reach the approved target databases, and an
+// approved profile `claims-pr-regression` v1. The request, not Jenkins, decides what data exists.
+pipeline {
+  agent { label 'datanivra-ci' }
+  options { timeout(time: 60, unit: 'MINUTES') }
+  environment {
+    DATANIVRA_BASE_URL = 'https://api.example.test'
+  }
+  stages {
+    stage('Request test data') {
+      steps {
+        withCredentials([string(credentialsId: 'datanivra-session-token', variable: 'DATANIVRA_TOKEN')]) {
+          sh '''
+            # Idempotency-Key allows [A-Za-z0-9._:-] only; BUILD_TAG may contain '/' or spaces.
+            KEY="jenkins-$(printf '%s' "$BUILD_TAG" | sha256sum | cut -c1-40)"
+            datanivra test-data request .datanivra/request.yaml --idempotency-key "$KEY" -o json > request.json
+            python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["id"])' request.json > request.id
+            datanivra test-data wait "$(cat request.id)" --timeout 1200 --interval 10
+          '''
+        }
+      }
+    }
+    stage('Integration tests') {
+      steps {
+        sh './scripts/run-integration-tests.sh'
+      }
+    }
+  }
+  post {
+    always {
+      // Success, failure or abort: release what this run holds (idempotent).
+      withCredentials([string(credentialsId: 'datanivra-session-token', variable: 'DATANIVRA_TOKEN')]) {
+        sh '''
+          if [ -s request.id ]; then datanivra test-data release "$(cat request.id)" --reason-code TEST_RUN_FINISHED; fi
+        '''
+      }
+    }
+  }
+}

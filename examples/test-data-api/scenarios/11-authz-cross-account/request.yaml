@@ -1,0 +1,10 @@
+# yaml-language-server: $schema=../../../../packages/contracts/schemas/v1/manifests/test-data-request.schema.json
+# DataNivra test-data-request manifest (apiVersion datanivra.io/v1alpha1). Validate: datanivra test-data validate <file>
+apiVersion: datanivra.io/v1alpha1
+kind: TestDataRequest
+metadata:
+  name: cross-account
+spec:
+  profile: { name: banking-regression, version: 1 }
+  scenarios:
+    - { scenario_code: FS_EVERYDAY_BANKING, count: 200 }

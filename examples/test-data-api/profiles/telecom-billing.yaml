@@ -1,0 +1,42 @@
+# yaml-language-server: $schema=../../../packages/contracts/schemas/v1/manifests/test-data-profile.schema.json
+# DataNivra test-data-profile manifest (apiVersion datanivra.io/v1alpha1). Validate: datanivra test-data validate <file>
+# Placeholder ids (00000000-0000-4000-8000-0000000000NN): replace with your ids.
+# 01 = approved target environment, 11 = certified dataset, 21 = customer agent,
+# 99 = workload identity trust (datanivra workload-identities list).
+apiVersion: datanivra.io/v1alpha1
+kind: TestDataProfile
+metadata:
+  name: telecom-billing
+  description: Synthetic subscribers, usage records and bills
+spec:
+  fulfilment: BUILD_DATASET
+  build:
+    business_domain: subscribers and billing
+    pack_id: telecom
+    dataset_kind: SYNTHETIC_ONLY
+    target_environment_id: 00000000-0000-4000-8000-000000000001
+    retention_days: 1
+    max_total_records: 1300
+    scenarios:
+      - {
+          pack_id: telecom,
+          scenario_code: TEL_EVERYDAY_USAGE,
+          kind: NORMAL,
+          default_count: 500,
+          max_count: 1000,
+        }
+      - {
+          pack_id: telecom,
+          scenario_code: TEL_DISPUTED_BILLS,
+          kind: RARE,
+          default_count: 50,
+          max_count: 200,
+        }
+      - {
+          pack_id: telecom,
+          scenario_code: TEL_DUPLICATE_CDRS,
+          kind: DUPLICATE,
+          default_count: 20,
+          max_count: 100,
+          included_by_default: false,
+        }

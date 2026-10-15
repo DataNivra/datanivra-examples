@@ -1,0 +1,118 @@
+# Example GitHub Actions workflow (ADR-0018): each pull request requests an isolated copy of an
+# ALREADY CERTIFIED dataset through an approved test-data profile, runs the application tests
+# against it and releases it — authenticated by the job's own OIDC token (no DataNivra secret is
+# stored in GitHub). Copy to .github/workflows/ in YOUR repository.
+#
+#   OIDC sign-in -> request (decision) -> wait READY -> tests -> release (always) ; PR closed -> release
+#
+# Requires (one-time, by your DataNivra administrators; see ../README.md):
+#   * a workload identity trust for this repository and audience (datanivra workload-identities create);
+#   * an approved profile `claims-pr-regression` v1 whose automation envelope names that trust;
+#   * the DataNivra operator has enabled workload identity (owner-gated, OFF by default). Without
+#     automatic approval the request waits for a human (exit 25 when --timeout elapses);
+#   * a runner that can reach the approved target databases (self-hosted, in your network);
+#   * repository variables: DATANIVRA_BASE_URL, DATANIVRA_TENANT, DATANIVRA_WORKLOAD_IDENTITY_ID,
+#     DATANIVRA_AUDIENCE, DATANIVRA_WHEELS_URL (CLI/SDK wheels from your DataNivra release assets:
+#     the packages are not published to PyPI); secret APP_DB_DSN (the runner's own access to the
+#     approved target — DataNivra never returns credentials).
+#
+# Values reach scripts through `env:` and quoted shell variables, never `${{ }}` inside `run:`.
+# Third-party actions are pinned by full commit SHA. Nothing printed here contains rows or tokens.
+name: pr-tests-with-test-data-api
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, closed]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: datanivra-test-data-${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  app-tests:
+    if: github.event.action != 'closed'
+    runs-on: [self-hosted, datanivra-ci]
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      id-token: write # this job alone may mint an OIDC token (audience = DATANIVRA_AUDIENCE)
+    env:
+      DATANIVRA_BASE_URL: ${{ vars.DATANIVRA_BASE_URL }}
+      DATANIVRA_TENANT: ${{ vars.DATANIVRA_TENANT }}
+      DATANIVRA_WORKLOAD_IDENTITY_ID: ${{ vars.DATANIVRA_WORKLOAD_IDENTITY_ID }}
+      DATANIVRA_AUDIENCE: ${{ vars.DATANIVRA_AUDIENCE }}
+      DATANIVRA_WHEELS_URL: ${{ vars.DATANIVRA_WHEELS_URL }}
+      APP_DB_DSN: ${{ secrets.APP_DB_DSN }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6
+
+      - name: Install the DataNivra CLI (release assets; not on PyPI)
+        run: |
+          uv tool install --find-links "$DATANIVRA_WHEELS_URL" datanivra-cli
+          echo "DATANIVRA_CONFIG_DIR=$RUNNER_TEMP/datanivra" >> "$GITHUB_ENV"
+
+      - name: Sign in with this job's OIDC token
+        run: datanivra login --workload-identity "$DATANIVRA_WORKLOAD_IDENTITY_ID" --tenant "$DATANIVRA_TENANT" --audience "$DATANIVRA_AUDIENCE" --make-default
+
+      - name: Request test data (exit 24 = denied by the profile)
+        id: request
+        run: |
+          datanivra test-data request .datanivra/request.yaml --ci-from-env -o json > "$RUNNER_TEMP/request.json"
+          echo "id=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["id"])' "$RUNNER_TEMP/request.json")" >> "$GITHUB_OUTPUT"
+
+      - name: Wait until READY (25 = still waiting for a human, 26 = ended, 27 = timeout)
+        env:
+          REQUEST_ID: ${{ steps.request.outputs.id }}
+        run: datanivra test-data wait "$REQUEST_ID" --timeout 1200 --interval 10
+
+      - name: Run the application tests against the approved target
+        run: ./scripts/run-integration-tests.sh
+
+      - name: Release (always — success, failure or cancellation)
+        if: always() && steps.request.outputs.id != ''
+        env:
+          REQUEST_ID: ${{ steps.request.outputs.id }}
+        run: |
+          # The workload session lasts at most 15 minutes: sign in again with a fresh OIDC token.
+          datanivra login --workload-identity "$DATANIVRA_WORKLOAD_IDENTITY_ID" --tenant "$DATANIVRA_TENANT" --audience "$DATANIVRA_AUDIENCE" --make-default
+          datanivra test-data release "$REQUEST_ID" --reason-code TEST_RUN_FINISHED
+
+  pr-closed-cleanup:
+    if: github.event.action == 'closed'
+    runs-on: [self-hosted, datanivra-ci]
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      DATANIVRA_BASE_URL: ${{ vars.DATANIVRA_BASE_URL }}
+      DATANIVRA_TENANT: ${{ vars.DATANIVRA_TENANT }}
+      DATANIVRA_WORKLOAD_IDENTITY_ID: ${{ vars.DATANIVRA_WORKLOAD_IDENTITY_ID }}
+      DATANIVRA_AUDIENCE: ${{ vars.DATANIVRA_AUDIENCE }}
+      DATANIVRA_WHEELS_URL: ${{ vars.DATANIVRA_WHEELS_URL }}
+      PR_NUMBER: ${{ github.event.pull_request.number }}
+    steps:
+      - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6
+
+      - name: Release every live request of this pull request (idempotent)
+        run: |
+          uv tool install --find-links "$DATANIVRA_WHEELS_URL" datanivra-cli
+          export DATANIVRA_CONFIG_DIR="$RUNNER_TEMP/datanivra"
+          datanivra login --workload-identity "$DATANIVRA_WORKLOAD_IDENTITY_ID" --tenant "$DATANIVRA_TENANT" --audience "$DATANIVRA_AUDIENCE" --make-default
+          datanivra test-data list --all -o json > "$RUNNER_TEMP/requests.json"
+          python3 - "$RUNNER_TEMP/requests.json" "$PR_NUMBER" > "$RUNNER_TEMP/live.txt" <<'PY'
+          import json, sys
+          live = {"PENDING_APPROVAL", "PROVISIONING", "READY"}
+          for item in json.load(open(sys.argv[1]))["items"]:
+              ref = item.get("ci_ref") or {}
+              if ref.get("pr_number") == int(sys.argv[2]) and item["state"] in live:
+                  print(item["id"])
+          PY
+          while read -r id; do
+            datanivra test-data release "$id" --reason-code PR_CLOSED
+          done < "$RUNNER_TEMP/live.txt"

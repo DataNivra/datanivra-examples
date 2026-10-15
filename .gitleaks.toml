@@ -1,0 +1,16 @@
+# gitleaks configuration: the upstream default rules plus DataNivra token shapes. Any finding fails
+# CI. Never add an allowlist entry for a real secret: remove the secret and rotate it instead.
+title = "DataNivra public repository gitleaks config"
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "datanivra-agent-enrollment-token"
+description = "DataNivra agent enrollment / agent credential token"
+regex = '''dn(?:enr|agt)_[A-Za-z0-9]{32,}'''
+keywords = ["dnenr_", "dnagt_"]
+
+[allowlist]
+description = "Documentation placeholders are intentionally fake"
+regexes = ['''<[A-Z0-9_]+>''', '''REPLACE_ME''', '''example\.invalid''']

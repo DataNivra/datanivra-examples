@@ -1,0 +1,64 @@
+# ILLUSTRATIVE, NOT RUN: the GitHub Actions workflow of ../github-actions/ on a third-party,
+# GitHub Actions-compatible hosted runner (here a Blacksmith-style `runs-on` label). DataNivra has
+# no Blacksmith dependency, integration or partnership; the workflow calls the same CLI as any runner.
+#
+# Hosted runners usually CANNOT reach databases inside your network. Use this only when the runner
+# reaches an approved target through private networking you configured (the profile's target pool
+# must be reachable from the runner), and never to move data out of your boundary. Workload identity
+# works as on GitHub-hosted runners: the job's GitHub OIDC token (same `repository`, `ref` claims).
+name: pr-tests-on-compatible-runner
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+
+jobs:
+  app-tests:
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      DATANIVRA_BASE_URL: ${{ vars.DATANIVRA_BASE_URL }}
+      DATANIVRA_TENANT: ${{ vars.DATANIVRA_TENANT }}
+      DATANIVRA_WORKLOAD_IDENTITY_ID: ${{ vars.DATANIVRA_WORKLOAD_IDENTITY_ID }}
+      DATANIVRA_AUDIENCE: ${{ vars.DATANIVRA_AUDIENCE }}
+      DATANIVRA_WHEELS_URL: ${{ vars.DATANIVRA_WHEELS_URL }}
+      APP_DB_DSN: ${{ secrets.APP_DB_DSN }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6
+
+      - name: Install the DataNivra CLI and sign in with the job's OIDC token
+        run: |
+          uv tool install --find-links "$DATANIVRA_WHEELS_URL" datanivra-cli
+          echo "DATANIVRA_CONFIG_DIR=$RUNNER_TEMP/datanivra" >> "$GITHUB_ENV"
+          export DATANIVRA_CONFIG_DIR="$RUNNER_TEMP/datanivra"
+          datanivra login --workload-identity "$DATANIVRA_WORKLOAD_IDENTITY_ID" --tenant "$DATANIVRA_TENANT" --audience "$DATANIVRA_AUDIENCE" --make-default
+
+      - name: Request test data
+        id: request
+        run: |
+          datanivra test-data request .datanivra/request.yaml --ci-from-env -o json > "$RUNNER_TEMP/request.json"
+          echo "id=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["id"])' "$RUNNER_TEMP/request.json")" >> "$GITHUB_OUTPUT"
+
+      - name: Wait until READY
+        env:
+          REQUEST_ID: ${{ steps.request.outputs.id }}
+        run: datanivra test-data wait "$REQUEST_ID" --timeout 1200 --interval 10
+
+      - name: Run the application tests
+        run: ./scripts/run-integration-tests.sh
+
+      - name: Release (always)
+        if: always() && steps.request.outputs.id != ''
+        env:
+          REQUEST_ID: ${{ steps.request.outputs.id }}
+        run: |
+          datanivra login --workload-identity "$DATANIVRA_WORKLOAD_IDENTITY_ID" --tenant "$DATANIVRA_TENANT" --audience "$DATANIVRA_AUDIENCE" --make-default
+          datanivra test-data release "$REQUEST_ID" --reason-code TEST_RUN_FINISHED

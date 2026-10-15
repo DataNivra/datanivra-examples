@@ -1,0 +1,11 @@
+# yaml-language-server: $schema=../../../../packages/contracts/schemas/v1/manifests/test-data-request.schema.json
+# DataNivra test-data-request manifest (apiVersion datanivra.io/v1alpha1). Validate: datanivra test-data validate <file>
+apiVersion: datanivra.io/v1alpha1
+kind: TestDataRequest
+metadata:
+  name: manufacturing-lot-recall
+spec:
+  profile: { name: manufacturing-traceability, version: 1 }
+  scenarios:
+    - { scenario_code: MFG_EVERYDAY_PRODUCTION, count: 200 }
+    - { scenario_code: MFG_LOT_RECALL, count: 50 }

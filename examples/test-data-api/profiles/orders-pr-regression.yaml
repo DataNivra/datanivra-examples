@@ -1,0 +1,28 @@
+# yaml-language-server: $schema=../../../packages/contracts/schemas/v1/manifests/test-data-profile.schema.json
+# DataNivra test-data-profile manifest (apiVersion datanivra.io/v1alpha1). Validate: datanivra test-data validate <file>
+# Placeholder ids (00000000-0000-4000-8000-0000000000NN): replace with your ids.
+# 01 = approved target environment, 11 = certified dataset, 21 = customer agent,
+# 99 = workload identity trust (datanivra workload-identities list).
+apiVersion: datanivra.io/v1alpha1
+kind: TestDataProfile
+metadata:
+  name: orders-pr-regression
+  description: Certified orders dataset leased into an isolated CI database per pull request
+spec:
+  fulfilment: LEASE_CERTIFIED_VERSION
+  lease:
+    dataset_id: 00000000-0000-4000-8000-000000000011
+    agent_id: 00000000-0000-4000-8000-000000000021
+    provider_kind: POSTGRESQL_CONTAINER
+    default_ttl_seconds: 1800
+    max_ttl_seconds: 7200
+    target_pool:
+      - env://DATANIVRA_CI_DB_1
+      - env://DATANIVRA_CI_DB_2
+      - env://DATANIVRA_CI_DB_3
+      - env://DATANIVRA_CI_DB_4
+  automation:
+    workload_identity_ids: [00000000-0000-4000-8000-000000000099]
+    max_ttl_seconds: 3600
+    max_live_requests: 4
+  audit_tags: [CI_PULL_REQUEST]

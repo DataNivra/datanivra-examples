@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "datanivra-test-data": {
+      "command": "datanivra-mcp",
+      "args": [],
+      "env": {
+        "DATANIVRA_BASE_URL": "https://api.example.test"
+      }
+    }
+  }
+}

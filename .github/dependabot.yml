@@ -1,0 +1,11 @@
+# Dependency updates. GitHub Actions stay pinned to full commit SHAs; Dependabot proposes the new
+# SHA (with the version comment) in a pull request that CI checks before a maintainer merges it.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    labels: [dependencies]

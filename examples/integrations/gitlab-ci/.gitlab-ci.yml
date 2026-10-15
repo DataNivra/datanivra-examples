@@ -1,0 +1,44 @@
+# Example GitLab CI pipeline (ADR-0018): each merge request requests an isolated copy of an
+# already certified dataset through an approved test-data profile, runs the tests and releases it.
+# Authentication: the job's GitLab `id_tokens` OIDC token (no DataNivra secret stored in GitLab).
+#
+# One-time setup (DataNivra administrators; see README.md): a workload identity trust
+#   datanivra workload-identities create --provider GITLAB_CI --repository acme/claims-service \
+#     --audience datanivra:acme --ref refs/heads/main --protected-refs-only ...
+# and an approved profile `claims-pr-regression` v1 whose envelope names that trust. GitLab's
+# `ref_protected` claim is only true for protected branches/tags: with --protected-refs-only, merge
+# request pipelines from unprotected branches are refused (by design). The operator must have
+# enabled workload identity (owner-gated, OFF by default).
+#
+# CI/CD variables: DATANIVRA_BASE_URL, DATANIVRA_TENANT, DATANIVRA_WORKLOAD_IDENTITY_ID,
+# DATANIVRA_WHEELS_URL (CLI/SDK wheels from your release assets), APP_DB_DSN (masked; the runner's
+# own access to the approved target). The runner must reach the approved targets (tag datanivra-ci).
+#
+# GitLab issues ONE id token per job and DataNivra accepts each token once, so the release in
+# after_script reuses the session stored in DATANIVRA_CONFIG_DIR (valid up to 15 minutes). Keep the
+# job shorter, or rely on the lease TTL (ttl_seconds in request.yaml), which always tears down.
+stages: [test]
+
+datanivra-integration-tests:
+  stage: test
+  tags: [datanivra-ci]
+  image: python:3.12-slim
+  timeout: 30m
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+  id_tokens:
+    DATANIVRA_ID_TOKEN:
+      aud: datanivra:acme
+  variables:
+    DATANIVRA_CONFIG_DIR: $CI_PROJECT_DIR/.datanivra-config
+  before_script:
+    - pip install --quiet --find-links "$DATANIVRA_WHEELS_URL" datanivra-cli
+    - datanivra login --workload-identity "$DATANIVRA_WORKLOAD_IDENTITY_ID" --tenant "$DATANIVRA_TENANT" --audience datanivra:acme --make-default
+  script:
+    - datanivra test-data request .datanivra/request.yaml --ci-from-env -o json > request.json
+    - python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["id"])' request.json > request.id
+    - datanivra test-data wait "$(cat request.id)" --timeout 900 --interval 10
+    - ./scripts/run-integration-tests.sh
+  after_script:
+    # Runs on success, failure and cancellation; idempotent.
+    - if [ -s request.id ]; then datanivra test-data release "$(cat request.id)" --reason-code TEST_RUN_FINISHED; fi

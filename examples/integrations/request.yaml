@@ -1,0 +1,17 @@
+# yaml-language-server: $schema=../../packages/contracts/schemas/v1/manifests/test-data-request.schema.json
+# TestDataRequest manifest (ADR-0018). It pins an APPROVED profile version and chooses nothing
+# else: sources, targets, masking/certification policies and the approval envelope all live in
+# the second-person-approved profile `claims-pr-regression` version 1. Synthetic placeholders.
+# Copy to `.datanivra/request.yaml` in your repository; validate with
+#   datanivra test-data validate .datanivra/request.yaml
+apiVersion: datanivra.io/v1alpha1
+kind: TestDataRequest
+metadata:
+  name: claims-pr-tests
+  description: Isolated certified claims data for one pull-request test run
+spec:
+  profile:
+    name: claims-pr-regression
+    version: 1
+  ttl_seconds: 3600
+  purpose_ref: QA-1234

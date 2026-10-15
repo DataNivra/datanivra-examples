@@ -1,0 +1,40 @@
+# Example CircleCI config (ADR-0018) — ILLUSTRATIVE, static-validated only.
+#
+# DataNivra workload identity trusts accept GitHub Actions and GitLab CI tokens only (CircleCI
+# OIDC is not supported yet), and there is no long-lived DataNivra service credential. The job
+# expects a SHORT-LIVED DataNivra session token as DATANIVRA_TOKEN in the context `datanivra`,
+# refreshed for the run by an approved process. A self-hosted runner resource class that can
+# reach the approved targets is required; CircleCI cloud machines normally cannot.
+version: 2.1
+
+jobs:
+  integration-tests:
+    machine: true
+    resource_class: acme/datanivra-ci
+    environment:
+      DATANIVRA_BASE_URL: https://api.example.test
+    steps:
+      - checkout
+      - run:
+          name: Install the DataNivra CLI (release assets; not on PyPI)
+          command: python3 -m pip install --quiet --find-links "$DATANIVRA_WHEELS_URL" datanivra-cli
+      - run:
+          name: Request test data and wait until READY
+          command: |
+            datanivra test-data request .datanivra/request.yaml --idempotency-key "circleci-$CIRCLE_WORKFLOW_ID-$CIRCLE_BUILD_NUM" -o json > request.json
+            python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["id"])' request.json > request.id
+            datanivra test-data wait "$(cat request.id)" --timeout 1200 --interval 10
+      - run:
+          name: Integration tests
+          command: ./scripts/run-integration-tests.sh
+      - run:
+          name: Release (always)
+          when: always
+          command: |
+            if [ -s request.id ]; then datanivra test-data release "$(cat request.id)" --reason-code TEST_RUN_FINISHED; fi
+
+workflows:
+  pull-request-tests:
+    jobs:
+      - integration-tests:
+          context: datanivra

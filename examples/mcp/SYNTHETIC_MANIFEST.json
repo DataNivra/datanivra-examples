@@ -1,0 +1,6 @@
+{
+  "synthetic": true,
+  "generator": "hand-written MCP demo transcript; expected responses produced by packages/mcp (datanivra_mcp.server) with correlation ids normalised",
+  "seed": 0,
+  "description": "MCP JSON-RPC messages naming an invented profile (healthcare-integration), invented ticket keys and placeholder URLs. Metadata only; no people, records or credentials."
+}

@@ -1,0 +1,16 @@
+{
+  "profile": {
+    "name": "insurance-claims",
+    "version": 1
+  },
+  "scenarios": [
+    {
+      "scenario_code": "INS_EVERYDAY_BOOK",
+      "count": 200
+    },
+    {
+      "scenario_code": "INS_CLAIM_PAYMENT_EDGE_CASES",
+      "count": 100
+    }
+  ]
+}

@@ -1,0 +1,56 @@
+# yaml-language-server: $schema=../../../packages/contracts/schemas/v1/manifests/test-data-profile.schema.json
+# DataNivra test-data-profile manifest (apiVersion datanivra.io/v1alpha1). Validate: datanivra test-data validate <file>
+# Placeholder ids (00000000-0000-4000-8000-0000000000NN): replace with your ids.
+# 01 = approved target environment, 11 = certified dataset, 21 = customer agent,
+# 99 = workload identity trust (datanivra workload-identities list).
+apiVersion: datanivra.io/v1alpha1
+kind: TestDataProfile
+metadata:
+  name: edge-cases-core
+  description: Core synthetic edge cases (no industry pack)
+spec:
+  fulfilment: BUILD_DATASET
+  build:
+    business_domain: generic records
+    dataset_kind: SYNTHETIC_ONLY
+    target_environment_id: 00000000-0000-4000-8000-000000000001
+    retention_days: 1
+    max_total_records: 50000
+    scenarios:
+      - { scenario_code: CORE_NORMAL, kind: NORMAL, default_count: 200, max_count: 1000 }
+      - { scenario_code: CORE_BOUNDARY, kind: BOUNDARY, default_count: 100, max_count: 500 }
+      - {
+          scenario_code: CORE_TEMPORAL_SEQUENCE,
+          kind: TEMPORAL_SEQUENCE,
+          default_count: 100,
+          max_count: 500,
+          included_by_default: false,
+        }
+      - {
+          scenario_code: CORE_NULL_HEAVY,
+          kind: NULL_HEAVY,
+          default_count: 50,
+          max_count: 200,
+          included_by_default: false,
+        }
+      - {
+          scenario_code: CORE_INVALID,
+          kind: INVALID,
+          default_count: 50,
+          max_count: 200,
+          included_by_default: false,
+        }
+      - {
+          scenario_code: CORE_DUPLICATE,
+          kind: DUPLICATE,
+          default_count: 50,
+          max_count: 200,
+          included_by_default: false,
+        }
+      - {
+          scenario_code: CORE_HIGH_VOLUME,
+          kind: HIGH_VOLUME,
+          default_count: 1000,
+          max_count: 50000,
+          included_by_default: false,
+        }

@@ -1,0 +1,109 @@
+# Optional composite action (Workbook 06 EE-13): run the DataNivra lease flow in one step.
+#
+#   - uses: ./examples/ci/github-actions/datanivra-lease   # copied into your repository
+#     with:
+#       mode: lease                       # or: cleanup (release every live lease of the PR)
+#       dataset-id: ${{ vars.DATANIVRA_DATASET_ID }}
+#       agent-id: ${{ secrets.DATANIVRA_AGENT_ID }}
+#       target-ref: ${{ vars.DATANIVRA_TARGET_REF }}
+#       test-command: python -m pytest -q tests
+#     env:
+#       DATANIVRA_API_URL: ${{ secrets.DATANIVRA_API_URL }}
+#       DATANIVRA_API_TOKEN: ${{ secrets.DATANIVRA_API_TOKEN }}
+#
+# It runs examples/ci/datanivra_ci.py (Python standard library only; `python3` must be on the
+# runner). Inputs reach the script through environment variables, never through the script
+# text. The API URL and token come from the caller's `env:` (repository secrets); this file
+# holds no secrets. Pair `mode: lease` with an `if: always()` step using `mode: cleanup-run` so a
+# cancelled step still releases the lease.
+name: DataNivra environment lease
+description: >-
+  Lease a certified DataNivra dataset version into an ephemeral, customer-controlled test
+  environment, run the tests, release it and verify the value-free evidence digest.
+
+inputs:
+  mode:
+    description: "lease (request, wait, test, release), cleanup (every live lease of this PR) or cleanup-run (this run's leases)"
+    required: false
+    default: lease
+  dataset-id:
+    description: Dataset whose certified version is leased (mode lease)
+    required: false
+    default: ''
+  dataset-version:
+    description: Certified version (default the current one)
+    required: false
+    default: ''
+  agent-id:
+    description: Agent that hydrates the new target (mode lease)
+    required: false
+    default: ''
+  target-ref:
+    description: Secret reference of the target, resolved by the agent (mode lease)
+    required: false
+    default: ''
+  tier:
+    description: Environment tier
+    required: false
+    default: QA
+  ttl-minutes:
+    description: Lease lifetime unless renewed
+    required: false
+    default: '60'
+  test-command:
+    description: Application test command (mode lease)
+    required: false
+    default: ''
+  reason-code:
+    description: Release reason code
+    required: false
+    default: TEST_RUN_FINISHED
+  evidence:
+    description: Step log (metadata only)
+    required: false
+    default: datanivra-lease-steps.json
+  lease-evidence:
+    description: Value-free lease evidence record (mode lease)
+    required: false
+    default: datanivra-lease-evidence.json
+
+runs:
+  using: composite
+  steps:
+    - name: DataNivra lease
+      shell: bash
+      env:
+        DN_SCRIPT: ${{ github.action_path }}/../../datanivra_ci.py
+        DN_MODE: ${{ inputs.mode }}
+        DN_DATASET_ID: ${{ inputs.dataset-id }}
+        DN_DATASET_VERSION: ${{ inputs.dataset-version }}
+        DN_AGENT_ID: ${{ inputs.agent-id }}
+        DN_TARGET_REF: ${{ inputs.target-ref }}
+        DN_TIER: ${{ inputs.tier }}
+        DN_TTL_MINUTES: ${{ inputs.ttl-minutes }}
+        DN_TEST_COMMAND: ${{ inputs.test-command }}
+        DN_REASON_CODE: ${{ inputs.reason-code }}
+        DN_EVIDENCE: ${{ inputs.evidence }}
+        DN_LEASE_EVIDENCE: ${{ inputs.lease-evidence }}
+      run: |
+        set -euo pipefail
+        case "$DN_MODE" in
+          lease)
+            args=(lease --dataset-id "$DN_DATASET_ID" --agent-id "$DN_AGENT_ID"
+                  --target-ref "$DN_TARGET_REF" --tier "$DN_TIER" --ttl-minutes "$DN_TTL_MINUTES"
+                  --test-command "$DN_TEST_COMMAND" --reason-code "$DN_REASON_CODE"
+                  --evidence "$DN_EVIDENCE" --lease-evidence-out "$DN_LEASE_EVIDENCE")
+            if [ -n "$DN_DATASET_VERSION" ]; then args+=(--dataset-version "$DN_DATASET_VERSION"); fi
+            ;;
+          cleanup)
+            args=(lease-cleanup --reason-code "$DN_REASON_CODE" --evidence "$DN_EVIDENCE")
+            ;;
+          cleanup-run)
+            args=(lease-cleanup --this-run --reason-code "$DN_REASON_CODE" --evidence "$DN_EVIDENCE")
+            ;;
+          *)
+            echo "unknown mode: $DN_MODE (lease, cleanup or cleanup-run)" >&2
+            exit 2
+            ;;
+        esac
+        python3 "$DN_SCRIPT" "${args[@]}"

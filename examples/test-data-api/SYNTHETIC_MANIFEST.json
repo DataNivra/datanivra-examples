@@ -1,0 +1,6 @@
+{
+  "synthetic": true,
+  "generator": "hand-written Universal Test Data API examples (Milestone 6, ADR-0018)",
+  "seed": 0,
+  "description": "TestDataProfile/TestDataRequest manifests, a TypeScript config, a Postman collection and request bodies. Placeholder UUIDs, synthetic scenario codes and counts, secret references (env://, vault://) and example.test hosts only. No rows, people, customers, keys or credentials."
+}

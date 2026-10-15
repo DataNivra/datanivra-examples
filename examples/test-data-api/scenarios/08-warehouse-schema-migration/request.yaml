@@ -1,0 +1,9 @@
+# yaml-language-server: $schema=../../../../packages/contracts/schemas/v1/manifests/test-data-request.schema.json
+# DataNivra test-data-request manifest (apiVersion datanivra.io/v1alpha1). Validate: datanivra test-data validate <file>
+apiVersion: datanivra.io/v1alpha1
+kind: TestDataRequest
+metadata:
+  name: migration-rehearsal
+spec:
+  profile: { name: warehouse-migration, version: 1 }
+  ttl_seconds: 3600

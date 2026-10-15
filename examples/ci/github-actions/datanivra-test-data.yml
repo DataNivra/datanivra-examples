@@ -1,0 +1,78 @@
+# Example GitHub Actions workflow: run your application tests against certified, masked,
+# ephemeral test data from DataNivra. Copy it to .github/workflows/ in YOUR repository.
+#
+# Prerequisites (one-time, see examples/ci/README.md):
+#   * a DataNivra agent inside your network, and a target database for ephemeral CI data that
+#     both the agent and this runner can reach (hence a self-hosted runner in that network);
+#   * a reviewed dataset request template (sources, subset, APPROVED policy versions) committed
+#     as ci/dataset-request.json;
+#   * repository secrets: DATANIVRA_API_URL, DATANIVRA_API_TOKEN (CI identity with the
+#     TDM_ENGINEER + DATA_ADMIN roles), DATANIVRA_AGENT_ID, APP_DB_DSN (the CI target database);
+#   * repository variable DATANIVRA_TARGET_REF: the secret reference the AGENT resolves for the
+#     CI target (e.g. vault://tdm/ci-target). CI never holds source credentials.
+name: app-tests-with-datanivra-data
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  # One ephemeral dataset per PR at a time; a newer push cancels the older run.
+  group: datanivra-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  app-tests:
+    runs-on: [self-hosted, datanivra-ci]
+    timeout-minutes: 60
+    env:
+      DATANIVRA_API_URL: ${{ secrets.DATANIVRA_API_URL }}
+      DATANIVRA_API_TOKEN: ${{ secrets.DATANIVRA_API_TOKEN }}
+      APP_DB_DSN: ${{ secrets.APP_DB_DSN }}
+      APP_DB_SCHEMA: ci_ephemeral
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6
+
+      - name: Python 3.12 with the application's test dependencies
+        run: |
+          uv venv --python 3.12 .venv
+          uv pip install --python .venv "psycopg[binary]>=3.2" "pytest>=8"
+          echo "$PWD/.venv/bin" >> "$GITHUB_PATH"
+
+      # Build trigger -> ephemeral environment -> certified dataset request -> wait for the job
+      # -> verify certification -> pin the version -> run the tests -> destroy (revoke).
+      # The script needs only the Python standard library.
+      - name: Test against certified ephemeral data
+        env:
+          DATANIVRA_AGENT_ID: ${{ secrets.DATANIVRA_AGENT_ID }}
+          DATANIVRA_TARGET_REF: ${{ vars.DATANIVRA_TARGET_REF }}
+        run: >
+          python examples/ci/datanivra_ci.py run
+          --request-template ci/dataset-request.json
+          --agent-id "$DATANIVRA_AGENT_ID"
+          --target-ref "$DATANIVRA_TARGET_REF"
+          --tier QA --ttl-hours 2
+          --test-command "python -m pytest -q examples/ci/app_under_test"
+          --pin-out datanivra-pin.json
+          --evidence datanivra-evidence.json
+          --keep-on-failure
+
+      - name: Upload DataNivra evidence (metadata only)
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: datanivra-evidence-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            datanivra-evidence.json
+            datanivra-pin.json
+          if-no-files-found: warn
+
+  # A kept (failed-build) dataset is destroyed by a manual follow-up run of:
+  #   python examples/ci/datanivra_ci.py destroy datanivra-pin.json
+  # Retention (retention_days in the template) and the environment's expires_at are the backstop.

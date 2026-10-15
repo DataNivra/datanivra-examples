@@ -1,0 +1,11 @@
+# yaml-language-server: $schema=../../../../packages/contracts/schemas/v1/manifests/test-data-request.schema.json
+# DataNivra test-data-request manifest (apiVersion datanivra.io/v1alpha1). Validate: datanivra test-data validate <file>
+apiVersion: datanivra.io/v1alpha1
+kind: TestDataRequest
+metadata:
+  name: temporal-edges
+spec:
+  profile: { name: edge-cases-core, version: 1 }
+  scenarios:
+    - { scenario_code: CORE_TEMPORAL_SEQUENCE, count: 300 }
+    - { scenario_code: CORE_BOUNDARY, count: 100 }

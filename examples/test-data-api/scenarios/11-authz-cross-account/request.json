@@ -1,0 +1,12 @@
+{
+  "profile": {
+    "name": "banking-regression",
+    "version": 1
+  },
+  "scenarios": [
+    {
+      "scenario_code": "FS_EVERYDAY_BANKING",
+      "count": 200
+    }
+  ]
+}

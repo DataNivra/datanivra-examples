@@ -1,0 +1,43 @@
+# Example Azure DevOps pipeline (ADR-0018) — ILLUSTRATIVE, static-validated only.
+#
+# DataNivra workload identity trusts accept GitHub Actions and GitLab CI tokens only (Azure DevOps
+# workload identity federation is not supported yet), and there is no long-lived DataNivra service
+# credential. The pipeline expects a SHORT-LIVED DataNivra session token in the secret variable
+# DATANIVRA_TOKEN (variable group `datanivra`), refreshed for the run by an approved process.
+#
+# Requires: a self-hosted agent pool `datanivra-ci` that can reach the approved targets, the
+# `datanivra` CLI (wheels from your release assets: DATANIVRA_WHEELS_URL), and an approved profile.
+trigger: none
+pr:
+  branches:
+    include: [main]
+
+pool:
+  name: datanivra-ci
+
+variables:
+  - group: datanivra
+  - name: DATANIVRA_BASE_URL
+    value: https://api.example.test
+
+steps:
+  - script: python3 -m pip install --quiet --find-links "$DATANIVRA_WHEELS_URL" datanivra-cli
+    displayName: Install the DataNivra CLI
+
+  - script: |
+      datanivra test-data request .datanivra/request.yaml --idempotency-key "ado-$(Build.BuildId)-$(System.JobAttempt)" -o json > request.json
+      python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["id"])' request.json > request.id
+      datanivra test-data wait "$(cat request.id)" --timeout 1200 --interval 10
+    displayName: Request test data and wait until READY
+    env:
+      DATANIVRA_TOKEN: $(DATANIVRA_TOKEN)
+
+  - script: ./scripts/run-integration-tests.sh
+    displayName: Integration tests
+
+  - script: |
+      if [ -s request.id ]; then datanivra test-data release "$(cat request.id)" --reason-code TEST_RUN_FINISHED; fi
+    displayName: Release (always)
+    condition: always()
+    env:
+      DATANIVRA_TOKEN: $(DATANIVRA_TOKEN)

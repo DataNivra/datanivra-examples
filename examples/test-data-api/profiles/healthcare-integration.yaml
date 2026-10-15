@@ -1,0 +1,57 @@
+# yaml-language-server: $schema=../../../packages/contracts/schemas/v1/manifests/test-data-profile.schema.json
+# DataNivra test-data-profile manifest (apiVersion datanivra.io/v1alpha1). Validate: datanivra test-data validate <file>
+# Placeholder ids (00000000-0000-4000-8000-0000000000NN): replace with your ids.
+# 01 = approved target environment, 11 = certified dataset, 21 = customer agent,
+# 99 = workload identity trust (datanivra workload-identities list).
+apiVersion: datanivra.io/v1alpha1
+kind: TestDataProfile
+metadata:
+  name: healthcare-integration
+  description: Synthetic members (patients) and their encounters (appointments) for integration tests
+spec:
+  fulfilment: BUILD_DATASET
+  build:
+    business_domain: patient encounters
+    pack_id: healthcare
+    dataset_kind: SYNTHETIC_ONLY
+    target_environment_id: 00000000-0000-4000-8000-000000000001
+    retention_days: 1
+    max_total_records: 3000
+    scenarios:
+      - {
+          pack_id: healthcare,
+          scenario_code: HC_ROUTINE_CARE,
+          kind: NORMAL,
+          default_count: 500,
+          max_count: 500,
+        }
+      - {
+          pack_id: healthcare,
+          scenario_code: HC_CHRONIC_CARE,
+          kind: HIGH_VOLUME,
+          default_count: 2000,
+          max_count: 2000,
+        }
+      - {
+          pack_id: healthcare,
+          scenario_code: HC_CLAIM_DENIALS,
+          kind: RARE,
+          default_count: 50,
+          max_count: 400,
+          included_by_default: false,
+        }
+      - {
+          pack_id: healthcare,
+          scenario_code: HC_ABNORMAL_LABS,
+          kind: BOUNDARY,
+          default_count: 50,
+          max_count: 200,
+          included_by_default: false,
+        }
+  automation:
+    workload_identity_ids: [00000000-0000-4000-8000-000000000099]
+    max_total_records: 2500
+    max_live_requests: 10
+    max_requests_per_hour: 60
+    escalate_out_of_envelope: true
+  audit_tags: [HEALTHCARE_SYNTHETIC]

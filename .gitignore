@@ -1,0 +1,13 @@
+# Never commit local secrets or environment files.
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+.pg_password
+# Local tooling output.
+__pycache__/
+.venv/
+node_modules/
+dist/
+out/

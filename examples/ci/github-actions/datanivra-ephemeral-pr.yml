@@ -1,0 +1,120 @@
+# Example GitHub Actions workflow (Workbook 06 EE-13): every pull request gets its own ephemeral
+# test environment hydrated with an ALREADY CERTIFIED dataset version, runs the application
+# tests against it and releases it. Copy it to .github/workflows/ in YOUR repository.
+#
+#   request lease -> wait (hydrate) -> READY -> run tests -> release (always) -> evidence
+#   pull_request closed -> release any lease still live for that PR
+#
+# Rows never pass through GitHub: your DataNivra agent (inside your network) hydrates the target
+# and tears it down. This workflow only sends identifiers (repository, PR number, run id, commit
+# SHA) and receives lease states and a value-free evidence record.
+#
+# Prerequisites (one-time, see examples/ci/README.md "Lease mode"):
+#   * a DataNivra agent inside your network and a target database for leased CI data that both
+#     the agent and this runner can reach (hence a self-hosted runner in that network);
+#   * a certified dataset (built e.g. nightly by the TDM team); its id in the repository variable
+#     DATANIVRA_DATASET_ID;
+#   * repository secrets: DATANIVRA_API_URL, DATANIVRA_API_TOKEN (CI identity holding
+#     dataset.provision and environment.manage, e.g. TDM_ENGINEER + DATA_ADMIN),
+#     DATANIVRA_AGENT_ID, APP_DB_DSN (the CI target database);
+#   * repository variables: DATANIVRA_TARGET_REF (the secret reference the AGENT resolves for the
+#     target, e.g. vault://tdm/ci-lease-target) and DATANIVRA_LEASE_SCHEMA (the schema the agent
+#     loads into). CI never holds source credentials.
+#
+# Values are passed to scripts through `env:` and quoted shell variables, never interpolated
+# into the script text. Third-party actions are pinned by full commit SHA.
+name: pr-tests-with-leased-test-data
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, closed]
+
+permissions:
+  contents: read
+
+concurrency:
+  # One lease per PR at a time. A newer push cancels the older run; its `if: always()` release
+  # step still runs before the newer run starts.
+  group: datanivra-lease-${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  app-tests:
+    if: github.event.action != 'closed'
+    runs-on: [self-hosted, datanivra-ci]
+    timeout-minutes: 60
+    env:
+      DATANIVRA_API_URL: ${{ secrets.DATANIVRA_API_URL }}
+      DATANIVRA_API_TOKEN: ${{ secrets.DATANIVRA_API_TOKEN }}
+      DATANIVRA_AGENT_ID: ${{ secrets.DATANIVRA_AGENT_ID }}
+      DATANIVRA_DATASET_ID: ${{ vars.DATANIVRA_DATASET_ID }}
+      DATANIVRA_TARGET_REF: ${{ vars.DATANIVRA_TARGET_REF }}
+      APP_DB_DSN: ${{ secrets.APP_DB_DSN }}
+      APP_DB_SCHEMA: ${{ vars.DATANIVRA_LEASE_SCHEMA }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6
+
+      # The lease script needs only the Python standard library. It requests the lease with this
+      # run's CI reference (deterministic Idempotency-Key: a retried step replays the same lease),
+      # waits while the agent hydrates the target, runs the tests, then releases in a `finally`
+      # and verifies the evidence digest. Exit 0 passed, 1 tests failed, 2 pipeline error.
+      - name: Request lease, wait for hydration, run tests, release
+        run: >
+          uv run --no-project --python 3.12 python examples/ci/datanivra_ci.py lease
+          --dataset-id "$DATANIVRA_DATASET_ID"
+          --agent-id "$DATANIVRA_AGENT_ID"
+          --target-ref "$DATANIVRA_TARGET_REF"
+          --tier QA --ttl-minutes 60
+          --test-command "uv run --no-project --python 3.12 --with psycopg[binary]>=3.2 --with pytest>=8 python -m pytest -q examples/ci/app_under_test"
+          --evidence datanivra-lease-steps.json
+          --lease-evidence-out datanivra-lease-evidence.json
+
+      # Backstop: if the step above was cancelled or the runner lost it, release whatever lease
+      # THIS run still holds (matched on repository + PR + run id). Idempotent: a no-op when the
+      # lease was already released. The lease TTL is the last line of defence.
+      - name: Release this run's lease
+        if: always()
+        run: >
+          python3 examples/ci/datanivra_ci.py lease-cleanup --this-run
+          --reason-code TEST_RUN_FINISHED
+          --evidence datanivra-lease-cleanup.json
+
+      - name: Upload DataNivra lease evidence (metadata only)
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: datanivra-lease-evidence-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            datanivra-lease-steps.json
+            datanivra-lease-evidence.json
+            datanivra-lease-cleanup.json
+          if-no-files-found: warn
+
+  # The PR was merged or closed: release every lease still live for it (e.g. one kept with
+  # --keep-on-failure, or one whose run was killed). Only the DataNivra API is called, so a
+  # GitHub-hosted runner is enough.
+  release-on-close:
+    if: github.event.action == 'closed'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      DATANIVRA_API_URL: ${{ secrets.DATANIVRA_API_URL }}
+      DATANIVRA_API_TOKEN: ${{ secrets.DATANIVRA_API_TOKEN }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Release every live lease of this pull request
+        run: >
+          python3 examples/ci/datanivra_ci.py lease-cleanup
+          --reason-code PR_CLOSED
+          --evidence datanivra-lease-cleanup.json
+
+      - name: Upload DataNivra clean-up evidence (metadata only)
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: datanivra-lease-cleanup-${{ github.run_id }}-${{ github.run_attempt }}
+          path: datanivra-lease-cleanup.json
+          if-no-files-found: warn

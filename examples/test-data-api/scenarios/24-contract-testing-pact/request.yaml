@@ -1,0 +1,10 @@
+# yaml-language-server: $schema=../../../../packages/contracts/schemas/v1/manifests/test-data-request.schema.json
+# DataNivra test-data-request manifest (apiVersion datanivra.io/v1alpha1). Validate: datanivra test-data validate <file>
+apiVersion: datanivra.io/v1alpha1
+kind: TestDataRequest
+metadata:
+  name: provider-states
+spec:
+  profile: { name: retail-orders, version: 1 }
+  scenarios:
+    - { scenario_code: RET_EVERYDAY_SHOPPING, count: 100 }
