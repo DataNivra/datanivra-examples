@@ -8,8 +8,8 @@
 # Requires (one-time, by your DataNivra administrators; see ../README.md):
 #   * a workload identity trust for this repository and audience (datanivra workload-identities create);
 #   * an approved profile `claims-pr-regression` v1 whose automation envelope names that trust;
-#   * the DataNivra operator has enabled workload identity (owner-gated, OFF by default). Without
-#     automatic approval the request waits for a human (exit 25 when --timeout elapses);
+#   * without automatic approval (opt-in per tenant, off until your tenant administrator turns it
+#     on) the request waits for a human (exit 25 when --timeout elapses);
 #   * a runner that can reach the approved target databases (self-hosted, in your network);
 #   * repository variables: DATANIVRA_BASE_URL, DATANIVRA_TENANT, DATANIVRA_WORKLOAD_IDENTITY_ID,
 #     DATANIVRA_AUDIENCE; secret APP_DB_DSN (the runner's own access to the approved target —

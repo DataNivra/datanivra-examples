@@ -14,8 +14,8 @@ the approved target, and release the data afterwards.
 * **Placeholder ids** in `profiles/*.yaml` look like `00000000-0000-4000-8000-0000000000NN`: replace them with
   your environment, dataset, agent and workload-identity ids.
 * **Availability:** the CLI and SDKs are on PyPI and npm (`pipx install datanivra-cli`,
-  `pip install datanivra-sdk`, `npm install @datanivra/sdk`). CI workload identity and automatic approval are off by default and need operator and tenant
-  enablement (see the [automatic approval guide](https://www.datanivra.com/docs/automatic-approval)); without them, CI requests wait for a human approver.
+  `pip install datanivra-sdk`, `npm install @datanivra/sdk`). CI workload identity is enabled on the hosted service; automatic approval is opt-in per tenant
+  (see the [automatic approval guide](https://www.datanivra.com/docs/automatic-approval)); without it, CI requests wait for a human approver.
 
 ## Status labels
 
@@ -35,7 +35,7 @@ the approved target, and release the data afterwards.
 | [`telecom-billing`](profiles/telecom-billing.yaml) | build (telecom pack) | 05 |
 | [`manufacturing-traceability`](profiles/manufacturing-traceability.yaml) | build (manufacturing pack) | 06 |
 | [`retail-orders`](profiles/retail-orders.yaml) | build (retail-ecommerce pack) | 02, 24 |
-| [`edge-cases-core`](profiles/edge-cases-core.yaml) | build (core scenarios, no pack) | 07, 10, 14, 15, 16, 25 |
+| [`edge-cases-core`](profiles/edge-cases-core.yaml) | build (core scenarios over the `general-enterprise` pack's tables) | 07, 10, 14, 15, 16, 25 |
 | [`orders-pr-regression`](profiles/orders-pr-regression.yaml) | lease a certified version (pool of 4) | 09, 17, 19, 21, 23 |
 | [`warehouse-migration`](profiles/warehouse-migration.yaml) | lease a certified masked version | 08, 12, 20 |
 

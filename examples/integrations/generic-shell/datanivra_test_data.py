@@ -6,7 +6,8 @@
 
 (sign in) -> request -> wait READY -> run the test command -> release in ``finally``.
 Exit codes: the test command's status; 24 denied by the profile; 25 still pending a human approval;
-26 ended without READY; 27 timed out; 1 other API errors.
+26 ended without READY; 27 timed out; 143 cancelled by SIGTERM (after releasing and stopping the
+test command); 1 other API errors.
 
 Credentials: ``DATANIVRA_TOKEN`` (a session), or a workload identity exchange with
 ``DATANIVRA_ID_TOKEN`` (your CI's OIDC token) + ``DATANIVRA_TENANT`` +
@@ -18,6 +19,7 @@ from __future__ import annotations
 
 import json
 import os
+import signal
 import subprocess
 import sys
 import time
@@ -29,6 +31,7 @@ from typing import Any
 
 TERMINAL = {"RELEASED", "REJECTED", "CANCELLED", "FAILED"}
 EXIT_DENIED, EXIT_PENDING, EXIT_ENDED, EXIT_TIMEOUT = 24, 25, 26, 27
+EXIT_CANCELLED = 143  # 128 + SIGTERM, as a shell reports a job ended by SIGTERM
 
 # (method, url, headers, body) -> (status, parsed JSON body). Injectable for tests.
 Send = Callable[[str, str, Mapping[str, str], bytes | None], tuple[int, Any]]
@@ -173,6 +176,21 @@ def run(
             log(f"datanivra: release failed ({error}); the lease ends at its TTL")
 
 
+class Cancelled(Exception):
+    """The CI system cancelled the job (SIGTERM)."""
+
+
+def _on_sigterm(_signum: int, _frame: object) -> None:
+    """Unwind through ``run``'s ``finally`` (release) instead of dying on the spot.
+
+    Python's default SIGTERM action exits without running ``finally`` blocks. Further SIGTERMs are
+    ignored so the release call itself is not interrupted. ``subprocess.call`` kills the running
+    test command when the exception passes through it.
+    """
+    signal.signal(signal.SIGTERM, signal.SIG_IGN)
+    raise Cancelled
+
+
 def main(argv: Sequence[str], env: Mapping[str, str] = os.environ) -> int:
     """Command-line entry point (see the module docstring)."""
     if len(argv) < 3 or argv[1] != "--":
@@ -182,7 +200,12 @@ def main(argv: Sequence[str], env: Mapping[str, str] = os.environ) -> int:
     with open(argv[0], encoding="utf-8") as handle:
         manifest = json.load(handle)
     key = env.get("DATANIVRA_IDEMPOTENCY_KEY") or f"py-{int(time.time())}-{os.getpid()}"
-    return run(manifest, list(argv[2:]), api=Api(base_url, token), idempotency_key=key)
+    signal.signal(signal.SIGTERM, _on_sigterm)
+    try:
+        return run(manifest, list(argv[2:]), api=Api(base_url, token), idempotency_key=key)
+    except Cancelled:
+        sys.stderr.write("datanivra: cancelled (SIGTERM); released what was requested\n")
+        return EXIT_CANCELLED
 
 
 if __name__ == "__main__":

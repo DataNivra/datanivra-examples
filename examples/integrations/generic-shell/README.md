@@ -18,7 +18,9 @@ python3 datanivra_test_data.py ../request.json -- ./scripts/run-integration-test
 Both: request the manifest's `spec` (`POST /v1/test-data/requests`), poll
 `GET /v1/test-data/requests/{id}` with back-off until `READY`, run the test command, and release
 (`POST .../release`) from a `trap`/`finally` — on success, failure and Ctrl-C/SIGTERM. Exit codes:
-the test command's status, 24 denied, 25 pending approval at timeout, 26 ended, 27 timeout.
+the test command's status, 24 denied, 25 pending approval at timeout, 26 ended, 27 timeout, 130/143
+cancelled by Ctrl-C/SIGTERM (after the release; the Python recipe also stops the running test
+command).
 
 **Never logged:** the token (the shell recipe keeps it in a 0600 header file, not on the command
 line), connection details, rows. Use these when your runner has network access to the approved

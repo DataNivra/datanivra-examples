@@ -7,8 +7,8 @@
 #     --audience datanivra:acme --ref refs/heads/main --protected-refs-only ...
 # and an approved profile `claims-pr-regression` v1 whose envelope names that trust. GitLab's
 # `ref_protected` claim is only true for protected branches/tags: with --protected-refs-only, merge
-# request pipelines from unprotected branches are refused (by design). The operator must have
-# enabled workload identity (owner-gated, OFF by default).
+# request pipelines from unprotected branches are refused (by design). Without automatic approval
+# (opt-in per tenant) the request waits for a human (exit 25 when --timeout elapses).
 #
 # CI/CD variables: DATANIVRA_BASE_URL, DATANIVRA_TENANT, DATANIVRA_WORKLOAD_IDENTITY_ID,
 # APP_DB_DSN (masked; the runner's

@@ -7,11 +7,13 @@ apiVersion: datanivra.io/v1alpha1
 kind: TestDataProfile
 metadata:
   name: edge-cases-core
-  description: Core synthetic edge cases (no industry pack)
+  description: Core synthetic edge cases over the general-enterprise pack's tables
 spec:
   fulfilment: BUILD_DATASET
   build:
     business_domain: generic records
+    # A synthetic-only build reads no source: the pack defines the tables the core scenarios fill.
+    pack_id: general-enterprise
     dataset_kind: SYNTHETIC_ONLY
     target_environment_id: 00000000-0000-4000-8000-000000000001
     retention_days: 1

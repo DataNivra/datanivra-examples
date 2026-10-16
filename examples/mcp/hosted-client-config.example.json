@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "datanivra-test-data": {
+      "type": "http",
+      "url": "https://api.datanivra.com/mcp",
+      "headers": {
+        "Authorization": "Bearer ${DATANIVRA_TOKEN}"
+      }
+    }
+  }
+}

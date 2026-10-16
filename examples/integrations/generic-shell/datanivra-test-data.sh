@@ -46,7 +46,11 @@ cleanup() {
   rm -rf "$workdir"
   exit "$status"
 }
-trap cleanup EXIT INT TERM
+# Release once, on EXIT. INT/TERM exit with 128+signal, so a cancelled job never reports success,
+# and the EXIT trap then releases.
+trap cleanup EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
 
 if [ -z "${DATANIVRA_TOKEN:-}" ]; then
   : "${DATANIVRA_ID_TOKEN:?set DATANIVRA_TOKEN or DATANIVRA_ID_TOKEN}"
