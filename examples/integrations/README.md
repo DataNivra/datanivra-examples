@@ -38,7 +38,7 @@ The repeatable part (every run) is what the recipes show. The shared manifest is
 | CircleCI | [`circleci/config.yml`](circleci/config.yml) | short-lived session token (context) | `when: always` | YAML, CLI argv parsed | illustrative, not run |
 | Generic shell (curl + jq) | [`generic-shell/datanivra-test-data.sh`](generic-shell/datanivra-test-data.sh) | session token or workload exchange | `trap ... EXIT` | shellcheck | static-validated |
 | Generic Python (stdlib) | [`generic-shell/datanivra_test_data.py`](generic-shell/datanivra_test_data.py) | session token or workload exchange | `finally` | run against the in-process control plane and a fake agent | synthetic E2E in repo |
-| Blacksmith-style runner | [`blacksmith/pr-test-data.yml`](blacksmith/pr-test-data.yml) | GitHub OIDC (as GitHub Actions) | `if: always()` | YAML, actionlint | illustrative, not run — GitHub Actions-compatible runner example, unverified, no Blacksmith dependency |
+| Blacksmith-style runner | [`blacksmith/pr-test-data.yml`](blacksmith/pr-test-data.yml) | GitHub OIDC (as GitHub Actions) | `if: always()` | YAML, actionlint | illustrative, not run — GitHub Actions-compatible runner example, unverified |
 | Self-hosted runner | [`self-hosted-runner/README.md`](self-hosted-runner/README.md) | any of the above | — | — | guidance |
 | Ephemeral Kubernetes | [`kubernetes/README.md`](kubernetes/README.md) | any of the above | lease TTL + namespace teardown | — | guidance |
 
