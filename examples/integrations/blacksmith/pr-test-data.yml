@@ -35,7 +35,7 @@ jobs:
 
       - name: Install the DataNivra CLI and sign in with the job's OIDC token
         run: |
-          uv tool install datanivra-cli==0.1.0
+          uv tool install datanivra-cli==0.2.0
           echo "DATANIVRA_CONFIG_DIR=$RUNNER_TEMP/datanivra" >> "$GITHUB_ENV"
           export DATANIVRA_CONFIG_DIR="$RUNNER_TEMP/datanivra"
           datanivra login --workload-identity "$DATANIVRA_WORKLOAD_IDENTITY_ID" --tenant "$DATANIVRA_TENANT" --audience "$DATANIVRA_AUDIENCE" --make-default

@@ -32,7 +32,7 @@ datanivra-integration-tests:
   variables:
     DATANIVRA_CONFIG_DIR: $CI_PROJECT_DIR/.datanivra-config
   before_script:
-    - pip install --quiet datanivra-cli==0.1.0
+    - pip install --quiet datanivra-cli==0.2.0
     - datanivra login --workload-identity "$DATANIVRA_WORKLOAD_IDENTITY_ID" --tenant "$DATANIVRA_TENANT" --audience datanivra:acme --make-default
   script:
     - datanivra test-data request .datanivra/request.yaml --ci-from-env -o json > request.json

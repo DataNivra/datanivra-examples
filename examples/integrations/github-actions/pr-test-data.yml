@@ -51,7 +51,7 @@ jobs:
 
       - name: Install the DataNivra CLI (datanivra-cli from PyPI, pinned)
         run: |
-          uv tool install datanivra-cli==0.1.0
+          uv tool install datanivra-cli==0.2.0
           echo "DATANIVRA_CONFIG_DIR=$RUNNER_TEMP/datanivra" >> "$GITHUB_ENV"
 
       - name: Sign in with this job's OIDC token
@@ -98,7 +98,7 @@ jobs:
 
       - name: Release every live request of this pull request (idempotent)
         run: |
-          uv tool install datanivra-cli==0.1.0
+          uv tool install datanivra-cli==0.2.0
           export DATANIVRA_CONFIG_DIR="$RUNNER_TEMP/datanivra"
           datanivra login --workload-identity "$DATANIVRA_WORKLOAD_IDENTITY_ID" --tenant "$DATANIVRA_TENANT" --audience "$DATANIVRA_AUDIENCE" --make-default
           datanivra test-data list --all -o json > "$RUNNER_TEMP/requests.json"

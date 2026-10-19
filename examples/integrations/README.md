@@ -20,7 +20,7 @@ partnerships. Every value in them is a synthetic placeholder (`acme/claims-servi
    Automatic approval is **opt-in**: it stays off until your tenant administrator turns it on
    (`datanivra test-data settings --automatic-approval on`). Without it, requests wait for a human
    (`datanivra test-data approve`); the recipes then end with exit code 25 when they time out.
-3. The CLI from PyPI. The recipes install `datanivra-cli==0.1.0` themselves (pin the version
+3. The CLI from PyPI. The recipes install `datanivra-cli==0.2.0` themselves (pin the version
    you have tested; SDKs: `pip install datanivra-sdk`, `npm install @datanivra/sdk`).
 
 The repeatable part (every run) is what the recipes show. The shared manifest is

@@ -31,8 +31,9 @@ as data. Tool inputs are closed JSON Schemas: extra fields (for example a pasted
 
 1. A DataNivra session in the environment of the MCP client (hosted) or of the process that starts
    the adapter (local):
-   * a person: `datanivra login --device --tenant <slug>`, then export the stored session as
-     `DATANIVRA_TOKEN` in your shell (never write it into a config file); or
+   * a person: `datanivra login --url https://api.datanivra.com` (approve the code it shows in the
+     console), then `export DATANIVRA_TOKEN="$(datanivra token)"` in your shell (never write it
+     into a config file); or
    * a CI job: `datanivra login --workload-identity <trust id> --tenant <slug> --audience <aud>`
      (a workload identity trust created by your DataNivra administrators).
 2. Local adapter only: `DATANIVRA_BASE_URL` (https for remote hosts).

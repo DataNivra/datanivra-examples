@@ -59,7 +59,7 @@ synthetic playground at https://www.datanivra.com/demo runs the workflow in your
 | Component | Version these examples were written for |
 | --- | --- |
 | Control-plane API | `v1` |
-| Agent | `0.4.4` |
+| Agent | `0.5.0` |
 
 ## Documentation
 

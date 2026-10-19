@@ -21,7 +21,7 @@ variables:
     value: https://api.example.test
 
 steps:
-  - script: python3 -m pip install --quiet datanivra-cli==0.1.0
+  - script: python3 -m pip install --quiet datanivra-cli==0.2.0
     displayName: Install the DataNivra CLI
 
   - script: |
