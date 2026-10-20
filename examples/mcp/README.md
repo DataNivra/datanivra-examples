@@ -1,6 +1,6 @@
 # MCP for the DataNivra Test Data API (example)
 
-**Status:** Preview. The same nine tools are offered two ways:
+**Status:** Available. The same nine tools are offered two ways:
 
 * the **hosted endpoint** `https://api.datanivra.com/mcp` (MCP Streamable HTTP, stateless JSON
   responses), authenticated with your own DataNivra session;
