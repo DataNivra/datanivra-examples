@@ -1,6 +1,6 @@
 # Isolated execution for the DataNivra agent
 
-**Status:** Container (OCI) and gVisor generally available, Firecracker in preview · **Where it runs:** your agent host (Linux) · **Needs:** agent 0.6.0 or later, Docker ≥ 24 or Podman ≥ 4 (gVisor: `runsc`; Firecracker: KVM)
+**Status:** Container (OCI), gVisor and Firecracker generally available · **Where it runs:** your agent host (Linux) · **Needs:** agent 0.6.0 or later (Firecracker: 0.6.1 or later with the jailer launcher), Docker ≥ 24 or Podman ≥ 4 (gVisor: `runsc`; Firecracker: KVM)
 
 Run every row-level stage of your agent's jobs — profiling, classification, subsetting, masking, synthesis, validation and provisioning — in a fresh, hardened, short-lived container instead of the agent process. Each worker sees only its stage's input and output, this job's own connection details and the keys this job's masking policy names: never the agent's identity key, its control-plane token, your secret store, the container runtime or other jobs. Published data is byte-for-byte the same as without isolation.
 
