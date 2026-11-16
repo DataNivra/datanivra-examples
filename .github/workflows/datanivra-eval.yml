@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-24.04
     env:
       DATANIVRA_BASE_URL: https://api.datanivra.com
-      DATANIVRA_CONFIG_DIR: ${{ runner.temp }}/datanivra
+      DATANIVRA_CONFIG_DIR: /tmp/datanivra
     steps:
       - uses: astral-sh/setup-uv@v6
       - run: uv tool install datanivra-cli==0.3.0
