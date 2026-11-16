@@ -1,0 +1,30 @@
+name: datanivra-eval
+on: workflow_dispatch
+permissions:
+  contents: read
+  id-token: write          # GitHub's short-lived identity token; no stored DataNivra secret
+jobs:
+  test-data:
+    runs-on: ubuntu-24.04
+    env:
+      DATANIVRA_BASE_URL: https://api.datanivra.com
+      DATANIVRA_CONFIG_DIR: ${{ runner.temp }}/datanivra
+    steps:
+      - uses: astral-sh/setup-uv@v6
+      - run: uv tool install datanivra-cli==0.3.0
+      - name: Sign in as this pipeline
+        run: datanivra login --workload-identity "${{ vars.DATANIVRA_WORKLOAD_IDENTITY_ID }}" --tenant "${{ vars.DATANIVRA_TENANT }}" --audience "${{ vars.DATANIVRA_AUDIENCE }}" --make-default
+      - name: Request test data within the approved profile
+        id: req
+        run: |
+          datanivra test-data request --profile-ref ci-eval@1 --scenario FS_EVERYDAY_BANKING=100 --purpose-ref EVAL-1 -o json > req.json
+          echo "id=$(python3 -c 'import json;print(json.load(open("req.json"))["id"])')" >> "$GITHUB_OUTPUT"
+      - name: Wait until the data is ready
+        run: datanivra test-data wait "${{ steps.req.outputs.id }}" --timeout 600 --interval 10
+      - name: Your tests would run here
+        run: echo "Test data is ready in lab-ci"
+      - name: Release the data
+        if: always()
+        run: |
+          datanivra login --workload-identity "${{ vars.DATANIVRA_WORKLOAD_IDENTITY_ID }}" --tenant "${{ vars.DATANIVRA_TENANT }}" --audience "${{ vars.DATANIVRA_AUDIENCE }}" --make-default
+          datanivra test-data release "${{ steps.req.outputs.id }}" --reason-code TEST_RUN_FINISHED
