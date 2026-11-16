@@ -13,7 +13,7 @@ jobs:
       - uses: astral-sh/setup-uv@v6
       - run: uv tool install datanivra-cli==0.3.0
       - name: Sign in as this pipeline
-        run: datanivra login --workload-identity "${{ vars.DATANIVRA_WORKLOAD_IDENTITY_ID }}" --tenant "${{ vars.DATANIVRA_TENANT }}" --audience "${{ vars.DATANIVRA_AUDIENCE }}" --make-default
+        run: datanivra login --url https://api.datanivra.com --workload-identity "${{ vars.DATANIVRA_WORKLOAD_IDENTITY_ID }}" --tenant "${{ vars.DATANIVRA_TENANT }}" --audience "${{ vars.DATANIVRA_AUDIENCE }}" --make-default
       - name: Request test data within the approved profile
         id: req
         run: |
@@ -26,5 +26,5 @@ jobs:
       - name: Release the data
         if: always()
         run: |
-          datanivra login --workload-identity "${{ vars.DATANIVRA_WORKLOAD_IDENTITY_ID }}" --tenant "${{ vars.DATANIVRA_TENANT }}" --audience "${{ vars.DATANIVRA_AUDIENCE }}" --make-default
+          datanivra login --url https://api.datanivra.com --workload-identity "${{ vars.DATANIVRA_WORKLOAD_IDENTITY_ID }}" --tenant "${{ vars.DATANIVRA_TENANT }}" --audience "${{ vars.DATANIVRA_AUDIENCE }}" --make-default
           datanivra test-data release "${{ steps.req.outputs.id }}" --reason-code TEST_RUN_FINISHED
