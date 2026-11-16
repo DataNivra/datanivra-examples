@@ -2,14 +2,17 @@ name: datanivra-eval
 on: workflow_dispatch
 permissions:
   contents: read
-  id-token: write          # GitHub's short-lived identity token; no stored DataNivra secret
 jobs:
   test-data:
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      id-token: write          # GitHub's short-lived identity token; no stored DataNivra secret
     env:
       DATANIVRA_BASE_URL: https://api.datanivra.com
       DATANIVRA_CONFIG_DIR: /tmp/datanivra
     steps:
+      - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
       - run: uv tool install datanivra-cli==0.3.0
       - name: Sign in as this pipeline
