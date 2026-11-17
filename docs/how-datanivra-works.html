@@ -1,0 +1,2660 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+    <style>
+      :root {
+        color-scheme: light;
+        box-sizing: border-box;
+        padding-top: env(safe-area-inset-top, 0px);
+        padding-bottom: env(safe-area-inset-bottom, 0px);
+      }
+      html {
+        scroll-padding-top: env(safe-area-inset-top, 0px);
+      }
+      body {
+        margin: 0;
+        padding: 0;
+        font:
+          14px -apple-system,
+          BlinkMacSystemFont,
+          sans-serif;
+        background: #fff;
+        color: #000;
+      }
+      img {
+        max-width: 100%;
+      }
+      [hidden]:not([hidden='until-found' i]) {
+        display: none !important;
+      }
+    </style>
+  </head>
+  <body>
+    <!doctype html>
+    <html lang="en">
+      <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+        <meta name="claude:viewport-fit-sides" content="cover" />
+        <title>How DataNivra works</title>
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+        />
+        <style>
+          /* === TOKENS === */
+          :root {
+            --bg: #f8f7f5;
+            --bg-card: #ffffff;
+            --bg-code: #f0ede8;
+            --bg-warn: #fff8ed;
+            --bg-ok: #edfaf2;
+            --bg-info: #eef4ff;
+            --bg-err: #fff0f0;
+            --fg: #1c1a17;
+            --fg-muted: #6b6560;
+            --fg-code: #3d2b1f;
+            --accent: #0062db;
+            --accent-lt: #dbeeff;
+            --warn: #b45309;
+            --warn-lt: #fff8ed;
+            --ok: #0c7a61;
+            --ok-lt: #edfaf2;
+            --err: #9b1c1c;
+            --border: #e2ddd8;
+            --radius: 8px;
+            --shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
+            color-scheme: light;
+          }
+          @media (prefers-color-scheme: dark) {
+            :root:not([data-theme='light']) {
+              --bg: #17161399;
+              --bg: #17161a;
+              --bg-card: #211f26;
+              --bg-code: #2a2730;
+              --bg-warn: #2a2010;
+              --bg-ok: #0d2318;
+              --bg-info: #101a30;
+              --bg-err: #2a1010;
+              --fg: #ede8e2;
+              --fg-muted: #9a9490;
+              --fg-code: #d4b896;
+              --accent: #6b9af7;
+              --accent-lt: #1a2d55;
+              --warn: #f59e0b;
+              --ok: #2dd4a9;
+              --err: #f87171;
+              --border: #35323d;
+              --shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+              color-scheme: dark;
+            }
+          }
+          :root[data-theme='dark'] {
+            --bg: #17161a;
+            --bg-card: #211f26;
+            --bg-code: #2a2730;
+            --bg-warn: #2a2010;
+            --bg-ok: #0d2318;
+            --bg-info: #101a30;
+            --bg-err: #2a1010;
+            --fg: #ede8e2;
+            --fg-muted: #9a9490;
+            --fg-code: #d4b896;
+            --accent: #6b9af7;
+            --accent-lt: #1a2d55;
+            --warn: #f59e0b;
+            --ok: #2dd4a9;
+            --err: #f87171;
+            --border: #35323d;
+            --shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+            color-scheme: dark;
+          }
+
+          * {
+            box-sizing: border-box;
+          }
+
+          body {
+            margin: 0;
+            background: var(--bg);
+            color: var(--fg);
+            font-family: 'Inter', system-ui, sans-serif;
+            font-size: 15px;
+            line-height: 1.65;
+            padding-left: max(16px, env(safe-area-inset-left, 0px));
+            padding-right: max(16px, env(safe-area-inset-right, 0px));
+            padding-block: 0;
+          }
+
+          /* Layout */
+          .page-wrap {
+            max-width: 820px;
+            margin: 0 auto;
+            padding-block: 48px 80px;
+          }
+
+          /* Header */
+          .guide-header {
+            border-bottom: 2px solid var(--accent);
+            padding-bottom: 28px;
+            margin-bottom: 40px;
+          }
+          .guide-eyebrow {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--accent);
+            margin-bottom: 10px;
+          }
+          .guide-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: clamp(28px, 5vw, 42px);
+            font-weight: 700;
+            line-height: 1.1;
+            margin: 0 0 10px;
+            text-wrap: balance;
+            color: var(--fg);
+          }
+          .guide-subtitle {
+            color: var(--fg-muted);
+            font-size: 15px;
+            margin: 0 0 20px;
+          }
+          .meta-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px 20px;
+            font-size: 13px;
+            color: var(--fg-muted);
+          }
+          .meta-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background: var(--accent-lt);
+            color: var(--accent);
+            border-radius: 20px;
+            padding: 2px 10px;
+            font-size: 12px;
+            font-weight: 500;
+          }
+
+          /* TOC */
+          .toc {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px 24px;
+            margin-bottom: 40px;
+          }
+          .toc-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            color: var(--fg-muted);
+            margin: 0 0 12px;
+          }
+          .toc-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 4px 24px;
+          }
+          .toc-item {
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+            font-size: 14px;
+            color: var(--fg);
+            text-decoration: none;
+          }
+          .toc-item:hover {
+            color: var(--accent);
+          }
+          .toc-part {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            color: var(--accent);
+            min-width: 20px;
+          }
+          .toc-pending {
+            opacity: 0.5;
+          }
+
+          /* Parts */
+          .part {
+            margin-bottom: 56px;
+          }
+          .part-header {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 20px;
+          }
+          .part-badge {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 13px;
+            font-weight: 700;
+            background: var(--accent);
+            color: #fff;
+            border-radius: 6px;
+            padding: 3px 10px;
+            flex-shrink: 0;
+          }
+          .part-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 22px;
+            font-weight: 700;
+            margin: 0;
+            color: var(--fg);
+          }
+          .part-time {
+            font-size: 12px;
+            color: var(--fg-muted);
+            margin-left: auto;
+            white-space: nowrap;
+          }
+
+          /* Steps */
+          .step {
+            margin-bottom: 28px;
+          }
+          .step-label {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 16px;
+            font-weight: 600;
+            margin: 0 0 10px;
+            color: var(--fg);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+          }
+          .step-num {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: var(--accent-lt);
+            color: var(--accent);
+            font-size: 12px;
+            font-weight: 700;
+            flex-shrink: 0;
+          }
+          .step p,
+          .step ul,
+          .step ol {
+            margin: 0 0 10px;
+          }
+          .step ul,
+          .step ol {
+            padding-left: 22px;
+          }
+          .step li {
+            margin-bottom: 4px;
+          }
+
+          /* Callout boxes */
+          .box {
+            border-radius: var(--radius);
+            padding: 14px 16px;
+            margin: 14px 0;
+            border-left: 3px solid;
+            font-size: 14px;
+          }
+          .box-title {
+            font-weight: 600;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+          }
+          .box p,
+          .box ul,
+          .box ol {
+            margin: 0;
+          }
+          .box ul {
+            padding-left: 18px;
+          }
+          .box li {
+            margin-bottom: 3px;
+          }
+
+          .box-ok {
+            background: var(--bg-ok);
+            border-color: var(--ok);
+            color: var(--fg);
+          }
+          .box-warn {
+            background: var(--bg-warn);
+            border-color: var(--warn);
+            color: var(--fg);
+          }
+          .box-info {
+            background: var(--bg-info);
+            border-color: var(--accent);
+            color: var(--fg);
+          }
+          .box-err {
+            background: var(--bg-err);
+            border-color: var(--err);
+            color: var(--fg);
+          }
+
+          .box-ok .box-title {
+            color: var(--ok);
+          }
+          .box-warn .box-title {
+            color: var(--warn);
+          }
+          .box-info .box-title {
+            color: var(--accent);
+          }
+          .box-err .box-title {
+            color: var(--err);
+          }
+
+          /* Code */
+          pre,
+          code {
+            font-family: 'JetBrains Mono', monospace;
+          }
+          code {
+            background: var(--bg-code);
+            color: var(--fg-code);
+            padding: 1px 5px;
+            border-radius: 4px;
+            font-size: 13px;
+          }
+          pre {
+            background: var(--bg-code);
+            color: var(--fg-code);
+            border-radius: var(--radius);
+            padding: 14px 16px;
+            overflow-x: auto;
+            font-size: 13px;
+            line-height: 1.55;
+            margin: 10px 0;
+            border: 1px solid var(--border);
+          }
+          pre code {
+            background: none;
+            padding: 0;
+            font-size: inherit;
+          }
+
+          /* Table */
+          .guide-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+            margin: 14px 0;
+          }
+          .guide-table th {
+            background: var(--bg-code);
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 600;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            padding: 8px 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+            color: var(--fg-muted);
+          }
+          .guide-table td {
+            padding: 9px 12px;
+            border-bottom: 1px solid var(--border);
+            vertical-align: top;
+          }
+          .guide-table tr:last-child td {
+            border-bottom: none;
+          }
+          .table-wrap {
+            overflow-x: auto;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+          }
+
+          /* Dividers */
+          .part-divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 48px 0;
+          }
+
+          /* Pending badge */
+          .pending-banner {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: var(--bg-warn);
+            border: 1px solid var(--border);
+            border-left: 3px solid var(--warn);
+            border-radius: var(--radius);
+            padding: 12px 16px;
+            font-size: 14px;
+            color: var(--fg);
+            margin-bottom: 20px;
+          }
+          .pending-banner strong {
+            color: var(--warn);
+          }
+
+          /* Footer */
+          .guide-footer {
+            border-top: 1px solid var(--border);
+            padding-top: 28px;
+            margin-top: 56px;
+            font-size: 13px;
+            color: var(--fg-muted);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: space-between;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="page-wrap">
+          <!-- Header -->
+          <header class="guide-header">
+            <div class="guide-eyebrow">Complete walkthrough · November 2026</div>
+            <h1 class="guide-title">How DataNivra works: a complete walkthrough</h1>
+            <p class="guide-subtitle">
+              An end-to-end guide — from sign-up to CI/CD automation — written in plain language for
+              everyone on your team. No engineering background required.
+            </p>
+            <div class="meta-row">
+              <span class="meta-badge">Windows · macOS · Linux</span>
+              <span class="meta-badge">Agent 0.6.1</span>
+              <span class="meta-badge">CLI 0.3.0</span>
+              <span>Parts A–I fully covered · Parts J–L included</span>
+            </div>
+          </header>
+
+          <!-- TOC -->
+          <nav class="toc" aria-label="Contents">
+            <div class="toc-title">Contents</div>
+            <div class="toc-grid">
+              <a href="#partA" class="toc-item"
+                ><span class="toc-part">A</span>Tour without installing anything</a
+              >
+              <a href="#partB" class="toc-item"
+                ><span class="toc-part">B</span>Create account &amp; invite approver</a
+              >
+              <a href="#partC" class="toc-item"
+                ><span class="toc-part">C</span>Hosted sandbox: nine missions</a
+              >
+              <a href="#partD" class="toc-item"
+                ><span class="toc-part">D</span>Install Docker &amp; the agent</a
+              >
+              <a href="#partE" class="toc-item"
+                ><span class="toc-part">E</span>Practice databases &amp; connect</a
+              >
+              <a href="#partF" class="toc-item"
+                ><span class="toc-part">F</span>Industry pack, sensitive data, masking</a
+              >
+              <a href="#partG" class="toc-item toc-pending"
+                ><span class="toc-part">G</span>Build: request, approve, deliver</a
+              >
+              <a href="#partH" class="toc-item toc-pending"
+                ><span class="toc-part">H</span>Synthetic data (custom schemas)</a
+              >
+              <a href="#partI" class="toc-item"
+                ><span class="toc-part">I</span>CLI, GitHub Actions, AI assistants</a
+              >
+              <a href="#partJ" class="toc-item toc-pending"
+                ><span class="toc-part">J</span>Cloud sources (optional)</a
+              >
+              <a href="#partK" class="toc-item toc-pending"
+                ><span class="toc-part">K</span>Governance &amp; audit evidence</a
+              >
+              <a href="#partL" class="toc-item toc-pending"
+                ><span class="toc-part">L</span>Plans, pricing &amp; how to buy</a
+              >
+            </div>
+          </nav>
+
+          <!-- What is DataNivra -->
+          <section class="part">
+            <div class="part-header">
+              <h2 class="part-title">What DataNivra is, in plain words</h2>
+            </div>
+            <p>
+              Every software team needs realistic data to test with. The fastest way to get it has
+              always been to copy the production database into a test environment. That copy now
+              contains real customers' names, card numbers or medical records, sitting in a place
+              that was never meant to protect them.
+            </p>
+            <p>
+              DataNivra is a test data management platform built the other way round. Its tagline is
+              <em>"Realistic test data. Production data stays home."</em> It has two parts:
+            </p>
+            <ul>
+              <li>
+                <strong>DataNivra Cloud</strong> (the website, the console and the API) is where
+                people define rules, approve requests and see evidence. It only ever handles
+                <em>descriptions</em> of your data: table and column names, counts, rule versions,
+                job status and checksums.
+              </li>
+              <li>
+                <strong>The DataNivra agent</strong> is a small program you run inside your own
+                network. It does all the work that touches actual rows: reading, masking,
+                subsetting, generating synthetic data, checking quality and delivering the result
+                into your test databases.
+              </li>
+            </ul>
+            <div class="box box-info">
+              <div class="box-title">Why it matters</div>
+              <p>
+                Your production rows are processed only by the agent inside your network. DataNivra
+                Cloud never sees your customers' records — a breach of their cloud would not expose
+                your data.
+              </p>
+            </div>
+          </section>
+
+          <hr class="part-divider" />
+
+          <!-- Before you start -->
+          <section class="part">
+            <div class="part-header">
+              <h2 class="part-title">Before you start: what you need</h2>
+            </div>
+            <ul>
+              <li>A work email address for your own account</li>
+              <li>
+                A second person or second email address you control, to act as approver (DataNivra
+                refuses to let one account approve its own work)
+              </li>
+              <li>
+                A Windows 10 or 11 PC with administrator rights and about 10 GB free disk space
+              </li>
+              <li>A GitHub account and a test repository you can change (Part I)</li>
+              <li>Optional: access to Amazon S3, Google BigQuery or Databricks (Part J)</li>
+              <li>About two working days in total — you can stop and restart at any point</li>
+            </ul>
+            <div class="box box-warn">
+              <div class="box-title">About the approver account</div>
+              <p>
+                For this evaluation it is fine to use a second mailbox you control. In real use,
+                every person should have exactly one account; otherwise one person could approve
+                their own requests, which breaks the protection.
+              </p>
+            </div>
+          </section>
+
+          <hr class="part-divider" />
+
+          <!-- PART A -->
+          <section class="part" id="partA">
+            <div class="part-header">
+              <span class="part-badge">A</span>
+              <h2 class="part-title">Look around without installing anything</h2>
+              <span class="part-time">~45 min</span>
+            </div>
+
+            <div class="step">
+              <div class="step-label"><span class="step-num">A1</span>The website</div>
+              <ol>
+                <li>Open <strong>www.datanivra.com</strong> in your browser.</li>
+                <li>
+                  Read the home page. Note the two ways to work: the console for your data team, and
+                  the Test Data API for developers and AI agents.
+                </li>
+                <li>
+                  Click <strong>Product → How it works</strong> and <strong>Architecture</strong>.
+                  The architecture page shows exactly what crosses from your network to DataNivra
+                  Cloud.
+                </li>
+                <li>
+                  Click <strong>Security</strong>, then open
+                  <strong>Trust and verification</strong> from the footer.
+                </li>
+                <li>
+                  Click <strong>Industry packs</strong> and open the pack closest to your business
+                  (for example <em>Financial services</em> or
+                  <em>Healthcare &amp; life sciences</em>).
+                </li>
+                <li>Click <strong>Pricing</strong> and read the plans. Part L explains them.</li>
+              </ol>
+            </div>
+
+            <div class="step">
+              <div class="step-label">
+                <span class="step-num">A2</span>The Synthetic Playground (runs in your browser)
+              </div>
+              <ol>
+                <li>
+                  In the footer, under Product, click <strong>Synthetic playground</strong> (or go
+                  to <strong>www.datanivra.com/demo</strong>).
+                </li>
+                <li>
+                  Pick an industry and generate a few rows. Everything runs in your browser; nothing
+                  is sent anywhere.
+                </li>
+              </ol>
+              <div class="box box-ok">
+                <div class="box-title">Expected result</div>
+                <p>You see realistic-looking but entirely made-up records, ready to download.</p>
+              </div>
+            </div>
+
+            <div class="step">
+              <div class="step-label">
+                <span class="step-num">A3</span>Runnable examples &amp; public repository
+              </div>
+              <ol>
+                <li>
+                  On the home page, find <strong>Explore runnable examples</strong> and click
+                  <strong>View runnable examples</strong>.
+                </li>
+                <li>
+                  Browse the scenarios: healthcare, banking, insurance, retail, CI/CD recipes and
+                  the AI-assistant example.
+                </li>
+                <li>
+                  The same files are public at
+                  <strong>github.com/DataNivra/datanivra-examples</strong> (MIT licence).
+                </li>
+              </ol>
+            </div>
+          </section>
+
+          <hr class="part-divider" />
+
+          <!-- PART B -->
+          <section class="part" id="partB">
+            <div class="part-header">
+              <span class="part-badge">B</span>
+              <h2 class="part-title">Create your account &amp; invite an approver</h2>
+              <span class="part-time">~15 min</span>
+            </div>
+
+            <div class="step">
+              <div class="step-label"><span class="step-num">B1</span>Sign up</div>
+              <ol>
+                <li>
+                  On <strong>www.datanivra.com</strong> click <strong>Start free</strong>, then
+                  click <strong>Start free</strong> again on the next page.
+                </li>
+                <li>
+                  Enter your name and work email, accept the Terms of Service and Privacy Policy,
+                  and submit.
+                </li>
+                <li>
+                  Open the email from DataNivra (sender <strong>hello@datanivra.com</strong>) and
+                  click <strong>Confirm my email</strong>. The link works once and expires after 30
+                  minutes.
+                </li>
+                <li>
+                  Name your organization. Write down the short tenant identifier — you will need it
+                  in Part I. <strong>You cannot change it later.</strong>
+                </li>
+                <li>Click <strong>Confirm</strong>. You are now the Organization owner.</li>
+              </ol>
+              <div class="box box-ok">
+                <div class="box-title">Expected result</div>
+                <p>
+                  You land in the DataNivra console at <strong>console.datanivra.com</strong>. Your
+                  organization starts on the Free plan with a one-time 30-day Pro Trial, which
+                  unlocks everything in this guide. No credit card needed.
+                </p>
+              </div>
+              <div class="box box-info">
+                <div class="box-title">How to sign in later</div>
+                <p>
+                  Go to <strong>console.datanivra.com</strong> and choose
+                  <strong>Email me a sign-in link</strong>. DataNivra never asks for a password.
+                  Sessions end after inactivity — just request a new link.
+                </p>
+              </div>
+            </div>
+
+            <div class="step">
+              <div class="step-label"><span class="step-num">B2</span>Invite your approver</div>
+              <ol>
+                <li>In the left menu, open <strong>Administration → Users &amp; Roles</strong>.</li>
+                <li>
+                  Click <strong>Invite user</strong>, enter the second email address and choose the
+                  role <strong>Security admin</strong>.
+                </li>
+                <li>
+                  Ask your colleague (or open the second mailbox) to accept the invitation and sign
+                  in with an email link. Use a separate browser or a private window for the second
+                  account so both can be signed in at the same time.
+                </li>
+              </ol>
+              <div class="box box-warn">
+                <div class="box-title">Why this matters</div>
+                <p>
+                  Throughout this guide, DataNivra will refuse to let the person who created
+                  something also approve it. This is called <em>separation of duties</em>. When you
+                  see "Separation of duties" as an error — that is the expected, correct behaviour,
+                  not a fault.
+                </p>
+              </div>
+            </div>
+          </section>
+
+          <hr class="part-divider" />
+
+          <!-- PART C -->
+          <section class="part" id="partC">
+            <div class="part-header">
+              <span class="part-badge">C</span>
+              <h2 class="part-title">The hosted sandbox: nine guided missions</h2>
+              <span class="part-time">1–2 hours</span>
+            </div>
+            <p>
+              The sandbox gives you a synthetic company estate and an agent run by DataNivra.
+              Nothing to install. Each mission completes only when the product has really done the
+              work.
+            </p>
+            <ol>
+              <li>
+                In the left menu, open <strong>Overview → Sandbox</strong> and click
+                <strong>Start the sandbox</strong>.
+              </li>
+              <li>Wait one or two minutes while the sandbox is prepared.</li>
+              <li>Work through the nine missions in order.</li>
+            </ol>
+
+            <div class="table-wrap">
+              <table class="guide-table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Mission</th>
+                    <th>What it proves</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>1</td>
+                    <td>Discover the synthetic estate</td>
+                    <td>DataNivra can list tables and relationships without reading values.</td>
+                  </tr>
+                  <tr>
+                    <td>2</td>
+                    <td>Review sensitive-data findings</td>
+                    <td>Personal and financial columns are detected automatically.</td>
+                  </tr>
+                  <tr>
+                    <td>3</td>
+                    <td>Create a masking policy from the pack template</td>
+                    <td>Policies are versioned and need a second person's approval.</td>
+                  </tr>
+                  <tr>
+                    <td>4</td>
+                    <td>Request a masked subset</td>
+                    <td>A small, consistent slice of the data is requested and approved.</td>
+                  </tr>
+                  <tr>
+                    <td>5</td>
+                    <td>Break it safely</td>
+                    <td>A dataset with an unprotected sensitive column is refused.</td>
+                  </tr>
+                  <tr>
+                    <td>6</td>
+                    <td>Get a dataset certified</td>
+                    <td>
+                      Automatic quality and privacy gates pass; a signed certificate is issued.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>7</td>
+                    <td>Provision to the sandbox QA environment</td>
+                    <td>Only certified data can be delivered.</td>
+                  </tr>
+                  <tr>
+                    <td>8</td>
+                    <td>Inspect the evidence</td>
+                    <td>You can download proof of what was done and verify it.</td>
+                  </tr>
+                  <tr>
+                    <td>9</td>
+                    <td>Schedule a refresh</td>
+                    <td>Test data can refresh on a calendar without manual work.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="box box-warn">
+              <div class="box-title">Approvals in missions 3 and 4</div>
+              <p>
+                These must be done by your approver account (from Part B2). If you try to approve
+                with your own account, DataNivra refuses with "Separation of duties" — that is
+                correct behaviour.
+              </p>
+            </div>
+          </section>
+
+          <hr class="part-divider" />
+
+          <!-- PART D -->
+          <section class="part" id="partD">
+            <div class="part-header">
+              <span class="part-badge">D</span>
+              <h2 class="part-title">Install the DataNivra agent on your Windows PC</h2>
+              <span class="part-time">~45 min</span>
+            </div>
+            <p>
+              In real use the agent runs on a server inside your network, next to your databases.
+              For this evaluation your PC plays that role. The agent is a Linux container, so on
+              Windows you run it inside Docker Desktop using a Linux environment called WSL (Windows
+              Subsystem for Linux).
+            </p>
+
+            <div class="step">
+              <div class="step-label">
+                <span class="step-num">D1</span>Install WSL and Docker Desktop (one time)
+              </div>
+              <ol>
+                <li>
+                  Click the Start menu, type <strong>PowerShell</strong>, right-click
+                  <strong>Windows PowerShell</strong> and choose
+                  <strong>Run as administrator</strong>.
+                </li>
+                <li>
+                  Type <code>wsl --install -d Ubuntu</code> and press Enter. When it finishes,
+                  restart your PC.
+                </li>
+                <li>
+                  After the restart an Ubuntu window opens and asks you to create a Linux user name
+                  and password. Choose anything you will remember — this password is only for your
+                  PC.
+                </li>
+                <li>
+                  Download Docker Desktop for Windows from <strong>docker.com</strong> and install
+                  it with the default options.
+                </li>
+                <li>
+                  Open Docker Desktop, go to
+                  <strong>Settings → Resources → WSL integration</strong>, switch on Ubuntu and
+                  click <strong>Apply &amp; restart</strong>.
+                </li>
+                <li>
+                  Open the <strong>Ubuntu</strong> app from the Start menu. This black window is
+                  where you type every command in this guide. Type <code>docker version</code> and
+                  press Enter.
+                </li>
+              </ol>
+              <div class="box box-ok">
+                <div class="box-title">Expected result</div>
+                <p>
+                  <code>docker version</code> prints a <em>Client</em> and a <em>Server</em> section
+                  without errors. If it says it cannot connect, make sure Docker Desktop is running
+                  (look for the whale icon in the taskbar) and try again.
+                </p>
+              </div>
+              <div class="box box-info">
+                <div class="box-title">Pasting into the Ubuntu window</div>
+                <p>
+                  To paste, right-click inside the Ubuntu window (or press Ctrl+Shift+V). Paste one
+                  block at a time and press Enter. If a command asks for your password, type your
+                  Linux password from step 3 — nothing appears on screen while you type, which is
+                  normal.
+                </p>
+              </div>
+            </div>
+
+            <div class="step">
+              <div class="step-label">
+                <span class="step-num">D2</span>Create the practice network
+              </div>
+              <p>
+                The agent and your practice databases will talk over a private Docker network.
+                Create it once:
+              </p>
+              <pre><code>docker network create datanivra-lab</code></pre>
+              <div class="box box-info">
+                <div class="box-title">
+                  If you see "network with name datanivra-lab already exists"
+                </div>
+                <p>
+                  That is fine — the network already exists from a previous run. Continue to D3.
+                </p>
+              </div>
+            </div>
+
+            <div class="step">
+              <div class="step-label">
+                <span class="step-num">D3</span>Create a one-time enrollment token in the console
+              </div>
+              <ol>
+                <li>
+                  In the console, open <strong>Connect → Agents</strong> and click
+                  <strong>Install agent</strong>.
+                </li>
+                <li>Choose <strong>Docker</strong> as the install method.</li>
+                <li>
+                  Enter an Agent name, for example <strong>ceo-laptop</strong>. Use exactly this
+                  name again in step D4.
+                </li>
+                <li>
+                  Click <strong>Create enrollment token</strong> (15 minutes validity is enough) and
+                  copy the token. <strong>It is shown only once.</strong> Keep this console page
+                  open: it will show the agent's heartbeat once running.
+                </li>
+              </ol>
+            </div>
+
+            <div class="step">
+              <div class="step-label"><span class="step-num">D4</span>Start the agent</div>
+              <p>
+                Paste the following into the Ubuntu window. The first command creates a private
+                folder for secrets; the second asks you to paste the token; the third starts the
+                agent. If you chose a different agent name, replace <code>ceo-laptop</code> in both
+                places.
+              </p>
+              <pre><code>sudo install -d -m 0700 -o 10001 -g 10001 "$HOME/datanivra-secrets"
+read -rsp 'Enrollment token: ' T && echo && printf %s "$T" | sudo install -m 0600 -o 10001 -g 10001 /dev/stdin "$HOME/datanivra-secrets/enrollment-token" && unset T
+docker run -d --name datanivra-agent --restart unless-stopped --network datanivra-lab \
+  --read-only --tmpfs /tmp --cap-drop ALL --security-opt no-new-privileges:true \
+  -e DATANIVRA_AGENT_CONTROL_PLANE_URL=https://api.datanivra.com \
+  -e DATANIVRA_AGENT_AGENT_NAME=ceo-laptop \
+  -e DATANIVRA_AGENT_SECRETS_DIR=/etc/datanivra/secrets \
+  -e DATANIVRA_AGENT_ENROLLMENT_TOKEN_REF=file://enrollment-token \
+  -v "$HOME/datanivra-secrets:/etc/datanivra/secrets:ro" \
+  -v datanivra-agent-state:/var/lib/datanivra-agent \
+  ghcr.io/manuelbomi/datanivra-agent@sha256:642b51b13d077cf0bb4e3d6bbb857b49d5c38712dbace6dcf2919e891d3d2be3</code></pre>
+
+              <div class="box box-warn">
+                <div class="box-title">Important: verify the agent joined the network</div>
+                <p>
+                  After the <code>docker run</code> command finishes, run this check immediately.
+                  The agent must be on the same Docker network as your practice databases or it will
+                  not be able to reach them in Part E.
+                </p>
+              </div>
+              <p>Run this command:</p>
+              <pre><code>docker network inspect datanivra-lab --format '{{range .Containers}}{{.Name}} {{end}}'</code></pre>
+              <div class="box box-ok">
+                <div class="box-title">Expected result</div>
+                <p>
+                  You should see <code>datanivra-agent</code> listed. It may also list
+                  <code>lab-source</code> and <code>lab-target</code> if you have already created
+                  them.
+                </p>
+              </div>
+              <div class="box box-err">
+                <div class="box-title">If datanivra-agent is NOT in the list</div>
+                <p>
+                  The agent container did not join the network automatically. Connect it manually:
+                </p>
+                <pre><code>docker network connect datanivra-lab datanivra-agent</code></pre>
+                <p>Then run the inspect command again to confirm it now appears.</p>
+              </div>
+
+              <div class="box box-ok">
+                <div class="box-title">Expected result in the console</div>
+                <p>
+                  Within a minute, the console page shows a heartbeat and the agent appears under
+                  <strong>Connect → Agents</strong> as <strong>ACTIVE</strong>. In the Ubuntu
+                  window, <code>docker ps</code> lists <code>datanivra-agent</code> as
+                  <em>healthy</em>.
+                </p>
+              </div>
+
+              <div class="box box-info">
+                <div class="box-title">If something goes wrong</div>
+                <ul>
+                  <li><code>docker logs datanivra-agent</code> shows what the agent is doing.</li>
+                  <li>
+                    If the token expired: create a new token (D3), then run
+                    <code>docker rm -f datanivra-agent</code> and repeat D4.
+                  </li>
+                  <li>
+                    The built-in health check
+                    <code>docker exec datanivra-agent datanivra-agent doctor</code> lists every
+                    check with PASS, WARN or FAIL.
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </section>
+
+          <div class="box box-tip" style="max-width: 860px; margin: 1.5rem auto">
+            <div class="box-title">Deploying on a Linux server? Use the quick installer</div>
+            <p>
+              Part D walks through Docker Desktop on Windows. For a
+              <strong>bare-metal or VM Linux host</strong> (the typical production setup), the
+              signed quick-install script handles all the steps — Docker Compose download, system
+              user, secrets directory, and systemd service — in one command:
+            </p>
+            <pre><code># Read the script first: https://www.datanivra.com/install.sh
+curl -fsSL https://www.datanivra.com/install.sh | sudo bash</code></pre>
+            <p>
+              Or pin a version and pass the enrollment token non-interactively (CI, Ansible,
+              Terraform user-data):
+            </p>
+            <pre><code>sudo DN_VERSION=0.6.1 DN_ENROLLMENT_TOKEN="&lt;token&gt;" \
+  bash &lt;(curl -fsSL https://www.datanivra.com/install.sh)</code></pre>
+            <p>
+              The installer creates the <code>datanivra</code> system user (UID 10001), writes the
+              token to <code>/run/datanivra-secrets/enrollment-token</code> (mode 0600), and
+              registers a systemd unit that starts the agent on boot. Useful commands after
+              installation:
+            </p>
+            <pre><code>journalctl -u datanivra-agent -f   # live logs
+systemctl status datanivra-agent   # service status</code></pre>
+            <p>
+              For Kubernetes, Helm, or cloud-provider managed infrastructure see the
+              <a href="https://www.datanivra.com/downloads#download-files">download packages</a>.
+            </p>
+          </div>
+
+          <hr class="part-divider" />
+
+          <!-- PART E -->
+          <section class="part" id="partE">
+            <div class="part-header">
+              <span class="part-badge">E</span>
+              <h2 class="part-title">Create two practice databases &amp; connect DataNivra</h2>
+              <span class="part-time">~45 min</span>
+            </div>
+            <p>
+              Instead of touching a company system, you will create two small PostgreSQL databases
+              in Docker: <strong>lab-source</strong> (filled with DataNivra's synthetic sample) and
+              <strong>lab-target</strong> (an empty database that plays the role of a QA test
+              environment).
+            </p>
+
+            <div class="step">
+              <div class="step-label"><span class="step-num">E1</span>Run the setup script</div>
+              <ol>
+                <li>
+                  In the Ubuntu window type <code>nano datanivra-lab-setup.sh</code> and press
+                  Enter. A simple editor opens.
+                </li>
+                <li>
+                  Copy the whole script from Appendix A of this guide and paste it into the editor
+                  (right-click).
+                </li>
+                <li>
+                  Press <strong>Ctrl+O</strong>, then Enter to save, and <strong>Ctrl+X</strong> to
+                  close the editor.
+                </li>
+                <li>Run it: <code>bash datanivra-lab-setup.sh</code></li>
+              </ol>
+              <div class="box box-ok">
+                <div class="box-title">Expected result</div>
+                <p>
+                  The script prints five steps and ends with a table of row counts, for example
+                  <code>commerce.orders 12</code>, <code>crm.customers 5</code>. Ten tables in
+                  total. It also creates read-only and loader database accounts.
+                </p>
+              </div>
+            </div>
+
+            <div class="step">
+              <div class="step-label">
+                <span class="step-num">E2</span>Give the agent the connection details
+              </div>
+              <p>
+                DataNivra Cloud never receives database passwords. Instead you store small
+                connection files next to the agent and tell the console only their names. Paste this
+                whole block at once — it sources the passwords file and then writes the connection
+                files in a single step:
+              </p>
+              <pre><code>. "$HOME/datanivra-lab/passwords.env"
+printf '{"kind":"POSTGRESQL","host":"lab-source","port":5432,"dbname":"practice","user":"tdm_reader","password":"%s","sslmode":"disable"}' "$READER_PW" | sudo install -m 0600 -o 10001 -g 10001 /dev/stdin "$HOME/datanivra-secrets/lab-source.json"
+for env in qa synth ci; do
+  printf '{"kind":"POSTGRESQL","host":"lab-target","port":5432,"dbname":"practice","user":"tdm_loader","password":"%s","sslmode":"disable","schema":"%s_data"}' "$LOADER_PW" "$env" | sudo install -m 0600 -o 10001 -g 10001 /dev/stdin "$HOME/datanivra-secrets/lab-target-$env.json"
+done</code></pre>
+              <div class="box box-warn">
+                <div class="box-title">Paste the whole block at once</div>
+                <p>
+                  The first line sources the passwords file, so the lines that follow can use those
+                  passwords. If you paste each line separately, the later lines will have empty
+                  password variables and the files will be written incorrectly.
+                </p>
+              </div>
+
+              <p>Verify the files were written correctly:</p>
+              <pre><code>ls -la ~/datanivra-secrets/</code></pre>
+              <div class="box box-ok">
+                <div class="box-title">Expected result</div>
+                <p>
+                  You should see four files: <code>lab-source.json</code>,
+                  <code>lab-target-qa.json</code>, <code>lab-target-synth.json</code> and
+                  <code>lab-target-ci.json</code>. All owned by uid 10001, permissions
+                  <code>-rw-------</code>.
+                </p>
+              </div>
+
+              <p>Now run the doctor check to confirm everything is connected:</p>
+              <pre><code>docker exec datanivra-agent datanivra-agent doctor \
+  --source-ref file://lab-source.json \
+  --connector POSTGRESQL \
+  --target-ref file://lab-target-qa.json</code></pre>
+
+              <div class="box box-ok">
+                <div class="box-title">Expected result</div>
+                <p>
+                  Among the checks you should see: <code>SOURCE_REACHABLE PASS</code>,
+                  <code>SOURCE_READ_ONLY PASS</code> and <code>TARGET_REACHABLE PASS</code>.
+                </p>
+              </div>
+
+              <div class="box box-err">
+                <div class="box-title">
+                  If you see SOURCE_REACHABLE FAIL or TARGET_REACHABLE FAIL (after the secret files
+                  are found)
+                </div>
+                <p>
+                  This almost always means the agent container is not on the
+                  <code>datanivra-lab</code> Docker network, so it cannot reach the database
+                  containers by their names. Fix it with one command:
+                </p>
+                <pre><code>docker network connect datanivra-lab datanivra-agent</code></pre>
+                <p>Then run the doctor check again.</p>
+                <p>
+                  <strong>Why this happens:</strong> The agent should have joined the network when
+                  it was started (Part D4), but Docker sometimes does not apply the
+                  <code>--network</code> flag correctly on first run, or the agent container was
+                  recreated without that flag. Connecting it manually is the right fix.
+                </p>
+              </div>
+
+              <div class="box box-info">
+                <div class="box-title">
+                  Understanding SKIP and DEPENDENCY_FAILED in doctor output
+                </div>
+                <p>
+                  The doctor command runs checks in sequence. If an earlier check fails, checks that
+                  depend on it are shown as <code>SKIP</code> or
+                  <code>DEPENDENCY_FAILED</code> rather than being attempted. This is expected
+                  behaviour — it tells you which check to fix first.
+                </p>
+                <p>
+                  For example: if <code>SOURCE_REACHABLE</code> fails, the check
+                  <code>SOURCE_READ_ONLY</code> will show <code>DEPENDENCY_FAILED</code> because
+                  there is no point testing read-only access on a database that cannot even be
+                  reached. Fix the root-cause failure (<code>SOURCE_REACHABLE</code>) and re-run;
+                  the downstream checks will then run normally.
+                </p>
+                <p>
+                  A clean output should show only <code>PASS</code> lines. Any <code>WARN</code>,
+                  <code>FAIL</code>, <code>SKIP</code> or <code>DEPENDENCY_FAILED</code> line means
+                  something is not ready.
+                </p>
+              </div>
+            </div>
+
+            <div class="step">
+              <div class="step-label">
+                <span class="step-num">E3</span>Register the source in the console
+              </div>
+              <p>
+                Open <strong>Connect → Data Sources</strong> and click <strong>Add source</strong>.
+                The registration wizard has five steps:
+              </p>
+
+              <div class="box box-info">
+                <div class="box-title">The 5-step registration wizard</div>
+                <ol>
+                  <li>
+                    <strong>Connector type</strong> — choose <strong>PostgreSQL</strong>. Set Source
+                    name to <strong>Practice ERP</strong>, Agent to <em>your agent name</em>, and
+                    declare the data as <strong>Production data</strong> (DataNivra applies the
+                    strictest rules to production sources).
+                  </li>
+                  <li>
+                    <strong>Read-only account</strong> — the console shows the SQL commands to
+                    create a read-only database role.
+                    <strong
+                      >For this lab the setup script already created the
+                      <code>tdm_reader</code> role in step E1</strong
+                    >, so you can skip the SQL. If you ever register a real source, run the SQL that
+                    the console shows against that database before continuing. The commands look
+                    like this:
+                    <pre
+                      style="margin-top: 8px"
+                    ><code>CREATE ROLE tdm_reader WITH LOGIN PASSWORD 'your-secure-password';
+GRANT CONNECT ON DATABASE practice TO tdm_reader;
+GRANT USAGE ON SCHEMA public, commerce, crm, hr, finance TO tdm_reader;
+GRANT SELECT ON ALL TABLES IN SCHEMA public, commerce, crm, hr, finance TO tdm_reader;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public, commerce, crm, hr, finance
+  GRANT SELECT ON TABLES TO tdm_reader;</code></pre>
+                  </li>
+                  <li>
+                    <strong>Secret reference</strong> — enter
+                    <code>file://lab-source.json</code> (the connection file you wrote in E2).
+                  </li>
+                  <li>
+                    <strong>Validate</strong> — click
+                    <strong>Register and validate read-only access</strong> and wait for
+                    <strong>Read-only access verified</strong>. This confirms the agent can reach
+                    the database and that the account is genuinely read-only.
+                  </li>
+                  <li>
+                    <strong>Discovery</strong> — if prompted, review the list of fields that cross
+                    the boundary, tick
+                    <strong>I reviewed what will be sent to DataNivra Cloud</strong>, and click
+                    <strong>Run metadata-only discovery</strong>.
+                  </li>
+                </ol>
+              </div>
+
+              <div class="box box-info">
+                <div class="box-title">Discovery may run automatically</div>
+                <p>
+                  Depending on your version of the product, step 5 may happen automatically —
+                  DataNivra runs discovery as soon as read-only access is verified, without waiting
+                  for you to click. To check: open <strong>Connect → Catalog</strong>. If you see
+                  your five schemas and ten tables listed with their column details, discovery has
+                  already completed successfully. You do not need to run it again.
+                </p>
+              </div>
+
+              <div class="box box-warn">
+                <div class="box-title">If you see "A source with this name already exists"</div>
+                <p>
+                  This happens if you clicked Back during registration — DataNivra already created
+                  the source before you went back.
+                  <strong>Do not try to register it again.</strong> Instead, go to
+                  <strong>Connect → Data Sources</strong> and click on the existing "Practice ERP"
+                  source. It is already registered; just continue from there.
+                </p>
+              </div>
+
+              <div class="box box-ok">
+                <div class="box-title">Expected result</div>
+                <p>
+                  Under <strong>Connect → Catalog</strong> you now see five schemas and ten tables
+                  with their columns and relationships — but no actual data values, because
+                  DataNivra only received the structure.
+                </p>
+              </div>
+            </div>
+
+            <div class="step">
+              <div class="step-label">
+                <span class="step-num">E4</span>Register three test environments
+              </div>
+              <ol>
+                <li>
+                  Open <strong>Trust → Provisioning</strong> and click
+                  <strong>New environment</strong>.
+                </li>
+                <li>
+                  Fill in: Environment name <strong>lab-qa</strong>, tier <strong>QA</strong>,
+                  provisioning agent (your agent), target secret reference
+                  <code>file://lab-target-qa.json</code>. Leave Ephemeral unticked. Save.
+                </li>
+                <li>
+                  Repeat for <strong>lab-synth</strong> (tier <strong>DEV</strong>,
+                  <code>file://lab-target-synth.json</code>) and <strong>lab-ci</strong> (tier
+                  <strong>QA</strong>, <code>file://lab-target-ci.json</code>).
+                </li>
+              </ol>
+              <div class="box box-ok">
+                <div class="box-title">Expected result</div>
+                <p>
+                  The Provisioning page lists all three environments with your agent. The note "No
+                  certified datasets — Only certified datasets can be provisioned" is
+                  <em>expected at this stage</em>. You have not created any datasets yet. That
+                  happens in Part G.
+                </p>
+              </div>
+            </div>
+          </section>
+
+          <hr class="part-divider" />
+
+          <!-- PART F -->
+          <section class="part" id="partF">
+            <div class="part-header">
+              <span class="part-badge">F</span>
+              <h2 class="part-title">
+                Protect: industry pack, sensitive data &amp; masking policy
+              </h2>
+              <span class="part-time">~30 min</span>
+            </div>
+
+            <div class="step">
+              <div class="step-label"><span class="step-num">F1</span>Activate industry packs</div>
+              <ol>
+                <li>
+                  Open <strong>Overview → Industry Packs</strong>, choose
+                  <strong>General enterprise</strong> and click <strong>Activate this pack</strong>.
+                  Follow the steps on screen.
+                </li>
+                <li>
+                  Also activate <strong>Financial services</strong>: Part I uses one of its
+                  scenarios.
+                </li>
+              </ol>
+              <div class="box box-info">
+                <div class="box-title">The pack activation wizard has 12 steps</div>
+                <p>
+                  The activation wizard walks you through connecting a source, choosing settings and
+                  creating policies. Here is what to select at each key step:
+                </p>
+                <ul>
+                  <li>
+                    <strong>Step 4 — Connect a source:</strong> Select
+                    <strong>Practice ERP (Postgresql, Production)</strong> from the list. It will
+                    show "Read-only access verified; its agent can run this pack."
+                  </li>
+                  <li>
+                    <strong>Step 5 — Entity model and scenario:</strong> Accept the default entity
+                    model the pack suggests. For Financial Services, choose the
+                    <em>Everyday Banking</em> scenario.
+                  </li>
+                  <li>
+                    <strong>Step 6 — Size, closure and masking:</strong> See the values below.
+                  </li>
+                  <li>
+                    <strong>Step 7 — Policies from templates:</strong> Before clicking
+                    <strong>Create 5 drafts from templates</strong>, you must fill in the
+                    <strong>Masking key reference</strong> field. See the box below.
+                  </li>
+                </ul>
+              </div>
+              <div class="box box-err">
+                <div class="box-title">Step 7 — Masking key reference is required</div>
+                <p>
+                  The form will not let you proceed without a masking key reference. The key ensures
+                  the same real customer always masks to the same fake name across tables, so joins
+                  still work in test data.
+                </p>
+                <p>
+                  <strong
+                    >First, find which directory your agent actually reads secrets from</strong
+                  >
+                  — it may differ from <code>~/datanivra-secrets/</code>:
+                </p>
+                <pre><code>docker inspect datanivra-agent --format '{{range .Mounts}}{{.Source}} -> {{.Destination}}{{"\n"}}{{end}}'</code></pre>
+                <p>
+                  Look for the line ending in <code>-&gt; /etc/datanivra/secrets</code>. The path
+                  before the arrow is your secrets directory. Common values are
+                  <code>/home/yourusername/datanivra-secrets</code> or
+                  <code>/run/datanivra-secrets</code>.
+                </p>
+                <p>
+                  Write the masking key to that directory (replace the path with yours). The agent
+                  requires a specific <strong>keyset format</strong> — anything else causes the
+                  errors shown below:
+                </p>
+                <pre><code># Use the path shown by docker inspect above — example uses /run/datanivra-secrets
+KEY=$(python3 -c "import os, base64; print(base64.urlsafe_b64encode(os.urandom(32)).decode().rstrip('='))")
+printf '{"primary":1,"keys":{"1":"%s"}}' "$KEY" | sudo install -m 0600 -o 10001 -g 10001 /dev/stdin /run/datanivra-secrets/masking-key</code></pre>
+                <p>Verify it:</p>
+                <pre><code>docker exec datanivra-agent cat /etc/datanivra/secrets/masking-key
+# Should print: {"primary":1,"keys":{"1":"base64url..."}}</code></pre>
+                <div class="box box-info" style="margin-top: 10px; margin-bottom: 0">
+                  <div class="box-title">
+                    Why this exact format — and what breaks if you get it wrong
+                  </div>
+                  <ul>
+                    <li>
+                      <strong>Plain string</strong> (e.g. the hex output of
+                      <code>openssl rand -hex 32</code>) → <code>SECRET_NOT_JSON_OBJECT</code>
+                    </li>
+                    <li>
+                      <strong><code>{"key": "..."}</code></strong> (wrong field names) →
+                      <code>KEYSET_INVALID</code>
+                    </li>
+                    <li><strong>Tink or JWK keyset JSON</strong> → <code>KEYSET_INVALID</code></li>
+                    <li>
+                      <strong>Correct format</strong>:
+                      <code>{"primary": 1, "keys": {"1": "base64url-32-bytes"}}</code> → success
+                    </li>
+                  </ul>
+                  <p>
+                    The <code>primary</code> field (integer) selects which version is used when no
+                    version is specified. The <code>keys</code> object maps version numbers (as
+                    strings) to base64url-encoded key bytes of at least 32 bytes each. This design
+                    supports key rotation: add version 2, move <code>primary</code> to 2, keep
+                    version 1 for older datasets that must stay linkable.
+                  </p>
+                </div>
+                <p>
+                  Then type this into the <strong>Masking key reference</strong> field on the
+                  console:
+                </p>
+                <pre><code>file://masking-key</code></pre>
+                <div class="box box-warn" style="margin-top: 10px; margin-bottom: 0">
+                  <div class="box-title">All secret files must go to the same directory</div>
+                  <p>
+                    Every secret file (connection files, masking key) must be written to the
+                    directory your agent actually reads from — the one shown by
+                    <code>docker inspect</code>. Writing to <code>~/datanivra-secrets/</code> when
+                    the agent reads from <code>/run/datanivra-secrets/</code> causes
+                    SECRET_NOT_FOUND errors even though the file exists on your PC.
+                  </p>
+                </div>
+              </div>
+              <div class="box box-warn">
+                <div class="box-title">Step 6 — what to enter for Size, closure and masking</div>
+                <p>
+                  The tutorial does not specify these values clearly. Use these for the evaluation:
+                </p>
+                <ul>
+                  <li>
+                    <strong>What kind of dataset:</strong> Hybrid (recommended) — this tests both
+                    masking and synthetic generation together
+                  </li>
+                  <li>
+                    <strong>Start the subset from:</strong> Choose the customers table (or the
+                    financial services equivalent — whatever the dropdown shows as the root entity)
+                  </li>
+                  <li>
+                    <strong>Root records to keep:</strong> 100 — small is fine for evaluation, the
+                    default 1,000 takes longer
+                  </li>
+                  <li><strong>Relationship depth:</strong> 3 — leave the default</li>
+                  <li><strong>Scenario records to generate:</strong> 100</li>
+                  <li><strong>Target environment:</strong> lab-qa</li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="step">
+              <div class="step-label">
+                <span class="step-num">F2</span>Review sensitive-data findings
+              </div>
+              <ol>
+                <li>Open <strong>Protect → Sensitive Data</strong>.</li>
+                <li>
+                  The page shows a flat list of every detected column across all your connected
+                  sources, displayed as <em>schema.table.column</em>. There is no dropdown to filter
+                  by source name — all sources appear together in one list.
+                </li>
+                <li>
+                  Look at the findings: names, email addresses, phone numbers, bank and tax
+                  identifiers, salaries. Each has a confidence level and a reason.
+                </li>
+                <li>
+                  Confirm a few findings and dismiss one you disagree with. Every decision is
+                  recorded in the audit trail.
+                </li>
+              </ol>
+              <div class="box box-info">
+                <div class="box-title">Why there is no source-name filter here</div>
+                <p>
+                  Protect → Sensitive Data is an org-wide view: DataNivra shows all detected
+                  sensitive columns from every source so you can review and act on them in one
+                  place. If you want to browse the structure of one specific source, use
+                  <strong>Connect → Catalog</strong> instead, which is organised by source. Use your
+                  browser's Ctrl+F search on the Sensitive Data page to quickly jump to columns from
+                  a particular schema.
+                </p>
+              </div>
+            </div>
+
+            <div class="step">
+              <div class="step-label">
+                <span class="step-num">F3</span>Create and approve a masking policy
+              </div>
+              <ol>
+                <li>
+                  During pack activation (F1 step 7), click
+                  <strong>Create from pack templates</strong>. The new policies appear under
+                  <strong>Protect → Policies</strong>.
+                </li>
+                <li>
+                  Open the new masking policy, review its rules, then click
+                  <strong>Submit for review</strong>.
+                </li>
+                <li>
+                  Switch to your <strong>approver account</strong>, open the same policy and click
+                  <strong>Review and approve</strong>. Give a reason, for example
+                  <em>Evaluation</em>.
+                </li>
+              </ol>
+              <div class="box box-warn">
+                <div class="box-title">Must be approved by the other account</div>
+                <p>
+                  Your own account cannot approve a policy it submitted. Use your approver account
+                  (from Part B2) in a separate browser window or private tab.
+                </p>
+              </div>
+              <div class="box box-ok">
+                <div class="box-title">What you have proved so far</div>
+                <p>
+                  By the end of Part F you have: a source connected and catalogued, three test
+                  environments registered, an industry pack active, sensitive columns identified,
+                  and a masking policy approved by a second person. You are ready to build and
+                  deliver your first dataset in Part G.
+                </p>
+              </div>
+            </div>
+          </section>
+
+          <hr class="part-divider" />
+
+          <!-- PARTS G–L (pending) -->
+          <section class="part" id="partG">
+            <div class="part-header">
+              <span class="part-badge">G</span>
+              <h2 class="part-title">Build: request, approve, certify &amp; deliver test data</h2>
+              <span class="part-time">~45 min</span>
+            </div>
+            <div class="step">
+              <div class="step-label"><span class="step-num">G1</span>Request a masked subset</div>
+              <p>
+                Open <strong>Build → Dataset Requests</strong> and click
+                <strong>New dataset request</strong>. The wizard has 12 steps. Here is what to enter
+                at each one:
+              </p>
+
+              <div class="box box-info">
+                <div class="box-title">Step 1 — Business entity</div>
+                <ul>
+                  <li>
+                    <strong>Request title:</strong> <code>General Enterprise QA dataset</code>
+                  </li>
+                  <li>
+                    <strong>Business entity or domain:</strong> type
+                    <code>general-enterprise</code> (listed as a known domain)
+                  </li>
+                  <li><strong>Industry pack:</strong> General Enterprise</li>
+                  <li><strong>What kind of dataset:</strong> Hybrid</li>
+                </ul>
+              </div>
+
+              <div class="box box-info">
+                <div class="box-title">Step 2 — Source scope</div>
+                <ul>
+                  <li>
+                    <strong>Source:</strong> Practice ERP — this is where the source appears (not
+                    Step 1)
+                  </li>
+                </ul>
+              </div>
+
+              <div class="box box-info">
+                <div class="box-title">Step 3 — Subset size &amp; strategy</div>
+                <ul>
+                  <li>
+                    <strong>Subset name:</strong> <code>customers-100</code> (tells the audit trail
+                    “100 customers and everything related to them”)
+                  </li>
+                  <li><strong>Business entity (root table):</strong> <code>crm.customers</code></li>
+                  <li><strong>How should records be selected:</strong> Fixed count</li>
+                  <li><strong>Number of root records:</strong> <code>100</code></li>
+                  <li><strong>Relationship depth:</strong> <code>3</code></li>
+                  <li>
+                    <strong
+                      >Keep both Include dependent records and Include referenced records
+                      ticked</strong
+                    >
+                    — this pulls in orders, invoices and payments for those customers so foreign
+                    keys still work
+                  </li>
+                </ul>
+              </div>
+
+              <div class="box box-info">
+                <div class="box-title">Step 4 — Scenario coverage</div>
+                <ul>
+                  <li>
+                    <strong>Scenario:</strong> Seasonal peak (GE_SEASONAL_PEAK) — the most
+                    representative normal scenario; gives you the richest dataset to inspect
+                  </li>
+                </ul>
+              </div>
+
+              <div class="box box-info">
+                <div class="box-title">Step 5 — Masking policy</div>
+                <ul>
+                  <li>
+                    <strong>Masking policy:</strong> General Enterprise Enterprise standard PII
+                    masking — v1 (Approved)
+                  </li>
+                  <li>
+                    You will see the checksum pinned. The agent refuses the job if the policy is
+                    changed after you submit — that is the tamper-proof guarantee working correctly.
+                  </li>
+                </ul>
+              </div>
+
+              <div class="box box-info">
+                <div class="box-title">Step 6 — Target environment</div>
+                <ul>
+                  <li>
+                    <strong>Deliver to:</strong> <code>lab-qa</code> — the QA environment you
+                    created in Part E4 specifically for masked subset delivery
+                  </li>
+                </ul>
+              </div>
+
+              <div class="box box-info">
+                <div class="box-title">Steps 7–9 — Refresh, retention, synthetic augmentation</div>
+                <ul>
+                  <li><strong>Refresh cadence:</strong> None (manual for evaluation)</li>
+                  <li><strong>Retention:</strong> 30 days (default)</li>
+                  <li><strong>Synthetic augmentation:</strong> leave at default</li>
+                </ul>
+              </div>
+
+              <div class="box box-info">
+                <div class="box-title">Step 10 — Certification policy</div>
+                <ul>
+                  <li>
+                    <strong>Certification policy:</strong> General Enterprise certification:
+                    standard
+                  </li>
+                </ul>
+              </div>
+
+              <div class="box box-info">
+                <div class="box-title">Steps 11–12 — Estimated footprint &amp; Review</div>
+                <ul>
+                  <li>Step 11 shows an estimate of rows and storage — review it and click Next.</li>
+                  <li>
+                    Step 12 is the review screen. Add a <strong>Justification</strong> such as
+                    <code>Evaluation run — testing masked subset delivery to lab-qa</code>, then
+                    click <strong>Submit</strong>.
+                  </li>
+                </ul>
+              </div>
+
+              <p>
+                Then switch to your <strong>approver account</strong> and open
+                <strong>Build → Dataset Requests</strong> to approve the request.
+              </p>
+
+              <div class="box box-ok">
+                <div class="box-title">Expected result</div>
+                <p>
+                  The request runs on your agent. Under <strong>Build → Datasets</strong> a new
+                  dataset version appears and goes through certification. Open
+                  <strong>Trust → Certification</strong> to see each gate: policy coverage, masking
+                  completion, referential integrity, orphans, schema and row-count reconciliation.
+                </p>
+              </div>
+            </div>
+
+            <div class="step">
+              <div class="step-label">
+                <span class="step-num">G2</span>The certificate and the evidence
+              </div>
+              <ol>
+                <li>
+                  Open <strong>Trust → Certificates</strong> and select the new certificate. You
+                  will see all 16 certification gates listed with Pass/Fail results.
+                </li>
+                <li>
+                  The evidence files are stored inside your agent container (not downloadable from
+                  the console in the current version). The certification page lists their exact file
+                  paths and SHA-256 checksums under <strong>Evidence for this report</strong>. To
+                  copy them out of the container:
+                </li>
+              </ol>
+              <pre><code>docker cp datanivra-agent:/var/lib/datanivra-agent/datasets/&lt;dataset-id&gt;/v1/ ~/datanivra-evidence/</code></pre>
+              <div class="box box-warn">
+                <div class="box-title">No "Download report" button in this version</div>
+                <p>
+                  The original guide mentions Download report (HTML) and Download evidence package
+                  (JSON) buttons — these do not exist in the current console. The evidence is stored
+                  inside your agent container at the paths shown on the certification page. The
+                  console page itself, with its SHA-256 checksums, serves as the auditable record.
+                </p>
+              </div>
+            </div>
+
+            <div class="step">
+              <div class="step-label">
+                <span class="step-num">G3</span>Deliver and check the result
+              </div>
+              <ol>
+                <li>
+                  In <strong>Trust → Provisioning</strong>, click
+                  <strong>Provision a certified dataset</strong>. Select the dataset version and
+                  <strong>lab-qa</strong> as the target, then click <strong>Provision</strong>.
+                </li>
+                <li>
+                  The status shows <strong>Queued</strong>. Click the provisioning job link (not the
+                  browser refresh) to see the job progress. It should reach
+                  <strong>Succeeded</strong> in under a minute.
+                </li>
+                <li>Check the masked data in the target database. In the Ubuntu window:</li>
+              </ol>
+              <pre><code>docker exec -it lab-target psql -U postgres -d practice -c "\dt qa_data.*"
+docker exec -it lab-target psql -U postgres -d practice -c "SELECT * FROM qa_data.customers LIMIT 5"</code></pre>
+              <div class="box box-ok">
+                <div class="box-title">Expected result</div>
+                <p>
+                  All 10 tables appear in <code>qa_data</code>. Customer names, emails, phone
+                  numbers and addresses are replaced with realistic fictional values. The
+                  <code>notes</code> column shows <code>[REDACTED]</code>. Dates, segments and other
+                  non-sensitive fields are preserved. All 959 rows (94 masked + 875 synthetic) are
+                  present with referential integrity intact.
+                </p>
+              </div>
+            </div>
+          </section>
+
+          <hr class="part-divider" />
+
+          <section class="part" id="partH">
+            <div class="part-header">
+              <span class="part-badge">H</span>
+              <h2 class="part-title">Synthetic data shaped like your own tables</h2>
+              <span class="part-time">~30 min</span>
+            </div>
+            <p>
+              Industry packs cover 15 industries. If your systems look different, DataNivra can
+              generate synthetic data from a description of your own tables. It never needs your
+              values.
+            </p>
+
+            <div class="step">
+              <div class="step-label"><span class="step-num">H1</span>Create a custom schema</div>
+              <ol>
+                <li>
+                  Open <strong>Automate → Custom Schemas</strong> and click
+                  <strong>New custom schema</strong>.
+                </li>
+                <li>
+                  Give it any name (for example <code>farm-ops</code>) and click
+                  <strong>Insert example</strong> to populate it with a sample 10-table structure,
+                  or paste your own JSON structure.
+                </li>
+                <li>
+                  Click <strong>Create custom schema</strong>. The page returns to the list —
+                  <strong>click the schema name</strong> to open it and see its tables and
+                  relationships.
+                </li>
+              </ol>
+              <div class="box box-warn">
+                <div class="box-title">You must click the schema name after creating it</div>
+                <p>
+                  The console does not automatically navigate into the schema after creation. Click
+                  the name in the list to open it before proceeding.
+                </p>
+              </div>
+            </div>
+
+            <div class="step">
+              <div class="step-label">
+                <span class="step-num">H2</span>Create and approve a test data profile
+              </div>
+              <ol>
+                <li>
+                  Scroll to <strong>Create a draft profile</strong> at the bottom of the schema
+                  page. Enter Profile name <code>farm-qa</code>, choose Target environment
+                  <strong>lab-synth</strong>, and click <strong>Create draft profile</strong>.
+                </li>
+                <li>On the profile page, click <strong>Submit for review</strong>.</li>
+                <li>
+                  Switch to your <strong>approver account</strong>. Go to
+                  <strong>Protect → Policies</strong> (not Automate → Test Data Profiles — the
+                  profile only appears there after it is approved). Find <code>farm-qa</code> and
+                  click <strong>Review and approve</strong>.
+                </li>
+              </ol>
+              <div class="box box-warn">
+                <div class="box-title">
+                  Approver goes to Protect → Policies, not Automate → Test Data Profiles
+                </div>
+                <p>
+                  The profile only appears under Automate → Test Data Profiles once it has been
+                  approved. Before approval, the approver must go to
+                  <strong>Protect → Policies</strong> to find and approve it.
+                </p>
+              </div>
+            </div>
+
+            <div class="step">
+              <div class="step-label">
+                <span class="step-num">H3</span>Request and check the synthetic data
+              </div>
+              <ol>
+                <li>
+                  Switch back to your main account. Open
+                  <strong>Automate → Test Data Profiles</strong>. The <code>farm-qa</code> profile
+                  now appears.
+                </li>
+                <li>
+                  Leave all scenario counts at 100 and click <strong>Request test data</strong>. The
+                  request is <strong>approved automatically</strong> — no second person needed for
+                  the actual data request (only the profile definition required approval).
+                </li>
+                <li>
+                  Click <strong>Open the request</strong> to see the job progress. Once it shows
+                  Succeeded, check the data in Ubuntu:
+                </li>
+              </ol>
+              <pre><code>docker exec -it lab-target psql -U postgres -d practice -c "\dt synth_data.*"
+docker exec -it lab-target psql -U postgres -d practice -c "SELECT * FROM synth_data.customers LIMIT 5"</code></pre>
+              <div class="box box-ok">
+                <div class="box-title">Expected result</div>
+                <p>
+                  Customer IDs are prefixed <code>SYN-</code> so synthetic rows are always
+                  identifiable. Names, emails, addresses and notes are entirely fabricated —
+                  DataNivra only saw the column names and types, never any production values. All
+                  foreign-key relationships across the 10 tables are intact.
+                </p>
+              </div>
+            </div>
+          </section>
+
+          <hr class="part-divider" />
+
+          <section class="part" id="partI">
+            <div class="part-header">
+              <span class="part-badge">I</span>
+              <h2 class="part-title">Automation: CLI, GitHub Actions &amp; AI assistants</h2>
+              <span class="part-time">1–2 hours</span>
+            </div>
+
+            <div class="step">
+              <div class="step-label">
+                <span class="step-num">I1</span>Install the command-line tool (CLI)
+              </div>
+              <p>First check your Python version:</p>
+              <pre><code>python3 --version</code></pre>
+              <div class="box box-warn">
+                <div class="box-title">Python 3.12 required</div>
+                <p>
+                  The CLI requires Python ≥ 3.12. Ubuntu 22.04 ships Python 3.10 — if you see
+                  <code>3.10.x</code> you must install 3.12 first:
+                </p>
+                <pre><code>sudo add-apt-repository ppa:deadsnakes/ppa -y
+sudo apt update
+sudo apt install -y python3.12 python3.12-venv</code></pre>
+              </div>
+              <p>Install pipx (if not already installed) and the CLI:</p>
+              <pre><code>sudo apt update && sudo apt install -y pipx && pipx ensurepath</code></pre>
+              <p>
+                Close and reopen the Ubuntu window, then install the CLI pinned to the Python 3.12
+                interpreter:
+              </p>
+              <pre><code>pipx install datanivra-cli==0.3.0 --python python3.12
+datanivra --version</code></pre>
+              <p>It must say <strong>0.3.0</strong>. Verify four commands work:</p>
+              <pre><code>datanivra sources list
+datanivra datasets list
+datanivra test-data profiles
+datanivra certificates list</code></pre>
+              <p>All four should return a (possibly empty) list without errors.</p>
+            </div>
+
+            <div class="step">
+              <div class="step-label"><span class="step-num">I2</span>Sign the CLI in</div>
+              <pre><code>datanivra login --url https://api.datanivra.com</code></pre>
+              <ol>
+                <li>
+                  The CLI prints a code (like <code>BCDF-GHJK</code>) and a link. Open the link in
+                  the browser where you are signed in to the console.
+                </li>
+                <li>
+                  Check that the page shows the same code as your terminal, tick the confirmation
+                  box and click <strong>Approve</strong>.
+                </li>
+                <li>
+                  Back in the terminal, <code>datanivra whoami</code> shows your name and
+                  organization.
+                </li>
+              </ol>
+              <div class="box box-warn">
+                <div class="box-title">Always include <code>--url</code></div>
+                <p>
+                  The <code>--url https://api.datanivra.com</code> flag is required. The CLI has no
+                  built-in default URL.
+                </p>
+              </div>
+              <div class="box box-warn">
+                <div class="box-title">Security note</div>
+                <p>
+                  If someone sends you such a link out of the blue, choose Deny: approving it would
+                  sign their computer in as you. Every approval appears in the audit trail.
+                </p>
+              </div>
+            </div>
+
+            <div class="step">
+              <div class="step-label">
+                <span class="step-num">I3</span>GitHub Actions: test data for every pipeline run
+              </div>
+
+              <h3>What this integration does — and why it matters</h3>
+
+              <p>Many teams fall into one of two traps when testing code in CI:</p>
+              <ul>
+                <li>
+                  <strong>Shared static test database</strong> — data drifts over time, parallel
+                  runs interfere with each other, and nobody knows whose change broke what.
+                </li>
+                <li>
+                  <strong>Production snapshot copied into CI</strong> — real customer names, account
+                  numbers, and balances flow into GitHub runners and test logs. A data-exposure
+                  incident waiting to happen.
+                </li>
+              </ul>
+              <p>
+                DataNivra's GitHub Actions integration solves both problems. Every CI run gets its
+                own <em>fresh</em>, <em>policy-governed</em> slice of realistic test data, and
+                <strong>production data never leaves your environment</strong>.
+              </p>
+
+              <h3>How the flow works (with a concrete example)</h3>
+
+              <p>
+                Imagine your team is building a banking mobile app. Your test suite needs 100
+                customer accounts with realistic balances, transactions, and linked cards — but you
+                cannot use real accounts. Here is exactly what happens when a developer pushes code
+                and the pipeline starts:
+              </p>
+
+              <div class="table-wrap">
+                <table class="guide-table">
+                  <thead>
+                    <tr>
+                      <th>Step</th>
+                      <th>Who acts</th>
+                      <th>What happens</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>1</td>
+                      <td>GitHub Actions runner</td>
+                      <td>
+                        The runner starts on GitHub's servers. It has no DataNivra password stored
+                        anywhere. Instead, GitHub issues it a short-lived cryptographic identity
+                        token (valid for a few minutes only) that proves "this is a run of
+                        <em>your-org/banking-app</em>, triggered by this commit."
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>2</td>
+                      <td>DataNivra CLI on the runner</td>
+                      <td>
+                        The CLI sends that token to <code>api.datanivra.com</code> and says:
+                        <em
+                          >"I am pipeline <code>github-ci-eval</code>. I need 100 rows of
+                          <code>FS_EVERYDAY_BANKING</code> data for purpose
+                          <code>EVAL-1</code>."</em
+                        >
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>3</td>
+                      <td>DataNivra cloud (policy check)</td>
+                      <td>
+                        DataNivra checks the <code>ci-eval</code> policy a human approved in
+                        advance:
+                        <em
+                          >Is this pipeline allowed? Is 100 rows within the approved envelope? Is
+                          the purpose valid?</em
+                        >
+                        If yes, it grants a reservation and signals your agent.
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>4</td>
+                      <td>DataNivra agent (inside your environment)</td>
+                      <td>
+                        Your agent — running as a Docker container on your own server or VM —
+                        receives the instruction. It pulls masked or synthetic data (never raw
+                        production rows) and provisions exactly 100 customer accounts into
+                        <strong>lab-ci</strong>, your CI lab database. This database lives entirely
+                        inside your infrastructure.
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>5</td>
+                      <td>GitHub Actions runner</td>
+                      <td>
+                        The runner connects directly to <strong>lab-ci</strong> and runs your test
+                        suite against those 100 accounts. The tests see realistic data: proper
+                        account numbers, plausible balances, linked cards — but none of it is real.
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>6</td>
+                      <td>DataNivra CLI on the runner</td>
+                      <td>
+                        When tests finish (pass or fail), the CLI releases the reservation. The 100
+                        accounts are cleared from lab-ci, making room for the next run. The release
+                        happens even if the tests fail, via <code>if: always()</code>.
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="box box-info">
+                <div class="box-title">What never happens</div>
+                <ul>
+                  <li>Real production rows never reach the GitHub runner or its logs.</li>
+                  <li>
+                    No DataNivra password, API key, or secret is stored in GitHub — the runner
+                    authenticates with GitHub's own ephemeral token.
+                  </li>
+                  <li>
+                    The pipeline cannot silently take more data than approved — asking for 500 rows
+                    when the policy allows 100 returns <code>TOTAL_EXCEEDS_ENVELOPE</code> and
+                    provisions nothing.
+                  </li>
+                  <li>
+                    The data does not "build up" between runs — each reservation is explicitly
+                    released, so lab-ci stays clean.
+                  </li>
+                </ul>
+              </div>
+
+              <div class="box box-info">
+                <div class="box-title">
+                  The same workflow works for any app that needs a database
+                </div>
+                <p>
+                  The banking example above applies equally to an e-commerce order service, a
+                  healthcare records app, or an HR system. The <code>--scenario</code> flag selects
+                  the industry pack (e.g. <code>FS_EVERYDAY_BANKING=100</code> for 100 banking
+                  customers). DataNivra provisions the right shape of data for your domain every
+                  time.
+                </p>
+              </div>
+
+              <h3>a) Find your tenant slug</h3>
+              <pre><code>datanivra org tenant</code></pre>
+              <p>
+                This prints your tenant slug — a short lowercase identifier like
+                <code>dadamoses-org</code>. You will need it below.
+                <strong>Do not use the UUID</strong> that appears in browser URLs.
+              </p>
+
+              <h3>b) Register a workload identity in the console</h3>
+              <ol>
+                <li>Go to <strong>Settings → Workload Identities → Register</strong>.</li>
+                <li>
+                  Name it (e.g. <code>github-ci-eval</code>), set the audience to
+                  <code>datanivra:&lt;your-slug&gt;</code> (e.g.
+                  <code>datanivra:dadamoses-org</code>), and set the trust to your GitHub repository
+                  (<code>repo:YourOrg/your-repo:*</code>).
+                </li>
+                <li>Copy the <strong>Workload Identity ID</strong> (a UUID).</li>
+              </ol>
+
+              <h3>c) Set repository variables in GitHub</h3>
+              <p>
+                In your GitHub repo:
+                <strong
+                  >Settings → Secrets and variables → Actions → Variables → New repository
+                  variable</strong
+                >. Create three variables:
+              </p>
+              <div class="table-wrap">
+                <table class="guide-table">
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Value</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><code>DATANIVRA_TENANT</code></td>
+                      <td>Your tenant slug, e.g. <code>dadamoses-org</code></td>
+                    </tr>
+                    <tr>
+                      <td><code>DATANIVRA_AUDIENCE</code></td>
+                      <td><code>datanivra:dadamoses-org</code> (prefix + slug)</td>
+                    </tr>
+                    <tr>
+                      <td><code>DATANIVRA_WORKLOAD_IDENTITY_ID</code></td>
+                      <td>The UUID from step b)</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <div class="box box-warn">
+                <div class="box-title">Type the values — do not paste</div>
+                <p>
+                  Pasting from certain tools can silently append a carriage-return
+                  (<code>\r\n</code>) to the value. That hidden character causes login to fail with
+                  <code>USAGE: Invalid WorkloadTokenExchange: check tenant_slug</code>. If you must
+                  paste, immediately delete to end-of-line and retype the last character.
+                </p>
+              </div>
+
+              <h3>d) Create a ci-eval policy</h3>
+              <ol>
+                <li>Go to <strong>Automate → Test Data Profiles → New Profile</strong>.</li>
+                <li>
+                  Name it <code>ci-eval</code>. Set Automatic Approval, then add the workload
+                  identity and profile settings.
+                </li>
+                <li>
+                  Have an approver go to <strong>Protect → Policies</strong> to approve it. (They
+                  will not find it under Automate — that tab only shows already-approved profiles.)
+                </li>
+              </ol>
+
+              <h3>e) The workflow file</h3>
+              <p>Create <code>.github/workflows/datanivra-eval.yml</code> in your repository:</p>
+              <pre><code>name: datanivra-eval
+on: workflow_dispatch
+permissions:
+  contents: read
+jobs:
+  test-data:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      id-token: write     # must be at job level, not workflow level
+    env:
+      DATANIVRA_BASE_URL: https://api.datanivra.com
+      DATANIVRA_CONFIG_DIR: /tmp/datanivra
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv tool install datanivra-cli==0.3.0
+      - name: Sign in as this pipeline
+        run: |
+          TENANT=$(printf '%s' "${{ vars.DATANIVRA_TENANT }}" | tr -d '[:space:]')
+          AUDIENCE=$(printf '%s' "${{ vars.DATANIVRA_AUDIENCE }}" | tr -d '[:space:]')
+          WI_ID=$(printf '%s' "${{ vars.DATANIVRA_WORKLOAD_IDENTITY_ID }}" | tr -d '[:space:]')
+          datanivra login --url https://api.datanivra.com \
+            --workload-identity "$WI_ID" \
+            --tenant "$TENANT" \
+            --audience "$AUDIENCE" \
+            --make-default
+      - name: Request test data within the approved profile
+        id: req
+        run: |
+          datanivra test-data request \
+            --profile-ref ci-eval@1 \
+            --scenario FS_EVERYDAY_BANKING=100 \
+            --purpose-ref EVAL-1 \
+            -o json > req.json
+          echo "id=$(python3 -c 'import json;print(json.load(open("req.json"))["id"])')" \
+            >> "$GITHUB_OUTPUT"
+      - name: Wait until the data is ready
+        run: datanivra test-data wait "${{ steps.req.outputs.id }}" --timeout 600 --interval 10
+      - name: Your tests would run here
+        run: echo "Test data is ready in lab-ci"
+      - name: Release the data
+        if: always()
+        run: |
+          TENANT=$(printf '%s' "${{ vars.DATANIVRA_TENANT }}" | tr -d '[:space:]')
+          AUDIENCE=$(printf '%s' "${{ vars.DATANIVRA_AUDIENCE }}" | tr -d '[:space:]')
+          WI_ID=$(printf '%s' "${{ vars.DATANIVRA_WORKLOAD_IDENTITY_ID }}" | tr -d '[:space:]')
+          datanivra login --url https://api.datanivra.com \
+            --workload-identity "$WI_ID" \
+            --tenant "$TENANT" \
+            --audience "$AUDIENCE" \
+            --make-default
+          datanivra test-data release "${{ steps.req.outputs.id }}" \
+            --reason-code TEST_RUN_FINISHED</code></pre>
+
+              <div class="box box-info">
+                <div class="box-title">Why <code>id-token: write</code> at job level</div>
+                <p>
+                  GitHub only injects the OIDC token environment variables (<code
+                    >ACTIONS_ID_TOKEN_REQUEST_URL</code
+                  >
+                  and <code>ACTIONS_ID_TOKEN_REQUEST_TOKEN</code>) when the permission is declared
+                  on the job, not just at the workflow level.
+                </p>
+              </div>
+
+              <div class="box box-info">
+                <div class="box-title">Node.js 20 deprecation warning (harmless)</div>
+                <p>
+                  You may see:
+                  <em>"Node.js 20 is deprecated … actions/checkout@v4, astral-sh/setup-uv@v6"</em>.
+                  This is a GitHub notice about their runners, not a DataNivra issue. It does not
+                  affect the workflow and will resolve automatically when those actions release
+                  Node.js 24 versions.
+                </p>
+              </div>
+
+              <div class="box box-info">
+                <div class="box-title">Over-limit protection to test</div>
+                <p>
+                  Try asking for more than the approved limit: change <code>=100</code> to
+                  <code>=500</code> in the workflow. The request is DENIED with the reason
+                  <code>TOTAL_EXCEEDS_ENVELOPE</code> and nothing is created. This is the protection
+                  you are buying: pipelines cannot quietly take more than you approved.
+                </p>
+              </div>
+            </div>
+          </section>
+
+          <hr class="part-divider" />
+
+          <section class="part" id="partJ">
+            <div class="part-header">
+              <span class="part-badge">J</span>
+              <h2 class="part-title">Cloud sources (optional)</h2>
+              <span class="part-time">~1 hour each</span>
+            </div>
+            <p>
+              Each connection follows the same pattern as Part E: create a read-only identity in the
+              cloud service, store its details in a connection file next to the agent, register the
+              source, and run discovery. Use only test buckets, datasets or catalogs during the
+              evaluation.
+            </p>
+
+            <div class="table-wrap">
+              <table class="guide-table">
+                <thead>
+                  <tr>
+                    <th>Service</th>
+                    <th>Read-only identity to create</th>
+                    <th>Notes</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Amazon S3</td>
+                    <td>
+                      IAM user or role with only <code>s3:GetObject</code> and
+                      <code>s3:ListBucket</code> on one prefix
+                    </td>
+                    <td>Upload a few CSVs from the Appendix download to a test bucket.</td>
+                  </tr>
+                  <tr>
+                    <td>Google BigQuery</td>
+                    <td>
+                      Service account with <em>BigQuery Data Viewer</em> on the dataset and
+                      <em>Job User</em> on the project
+                    </td>
+                    <td>Reading uses the table-data API, not billed query scanning.</td>
+                  </tr>
+                  <tr>
+                    <td>Databricks</td>
+                    <td>Non-admin service principal with an OAuth secret</td>
+                    <td>Needs Unity Catalog and a SQL warehouse.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <hr class="part-divider" />
+
+          <section class="part" id="partK">
+            <div class="part-header">
+              <span class="part-badge">K</span>
+              <h2 class="part-title">Governance, evidence &amp; preview features</h2>
+              <span class="part-time">~30 min</span>
+            </div>
+            <div class="step">
+              <div class="step-label">
+                <span class="step-num">K1</span>Audit and security review
+              </div>
+              <ol>
+                <li>
+                  Open <strong>Trust → Audit</strong>. Every action you took is listed. The trail is
+                  hash-chained: tampering is detectable.
+                </li>
+                <li>
+                  Open <strong>Trust → Security Review</strong>. Choose a date range and click
+                  <strong>Download audit evidence (JSON)</strong>.
+                </li>
+              </ol>
+            </div>
+
+            <div class="step">
+              <div class="step-label"><span class="step-num">K2</span>Preview features</div>
+              <div class="table-wrap">
+                <table class="guide-table">
+                  <thead>
+                    <tr>
+                      <th>Feature</th>
+                      <th>Where</th>
+                      <th>Stated limit</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>Compliance Guard</td>
+                      <td>Trust → Compliance Guard</td>
+                      <td>Reports codes and counts; does not certify compliance.</td>
+                    </tr>
+                    <tr>
+                      <td>Document sets</td>
+                      <td>Build → Document Sets</td>
+                      <td>No PDF; rule-based detection; does not prove anonymisation.</td>
+                    </tr>
+                    <tr>
+                      <td>Model Provider Policy</td>
+                      <td>Protect → Model Provider Policy</td>
+                      <td>No model adapter ships yet, so every model call is refused.</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+
+          <hr class="part-divider" />
+
+          <section class="part" id="partL">
+            <div class="part-header">
+              <span class="part-badge">L</span>
+              <h2 class="part-title">Plans, pricing &amp; how to buy</h2>
+              <span class="part-time">~15 min</span>
+            </div>
+
+            <div class="table-wrap">
+              <table class="guide-table">
+                <thead>
+                  <tr>
+                    <th>Plan</th>
+                    <th>Price</th>
+                    <th>What it is for</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Free</td>
+                    <td>$0, no card</td>
+                    <td>
+                      Permanent, synthetic data only: hosted sandbox, all 15 industry packs, custom
+                      schemas in sandbox. No own agents or sources.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Pro Trial</td>
+                    <td>$0 for 30 days, once</td>
+                    <td>
+                      Included with a new organization: the real workflow with one agent, three
+                      sources, CI/CD and custom schemas.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Team</td>
+                    <td>From $499/month</td>
+                    <td>
+                      Small teams: 3 agents, 10 sources, 25 profiles, 5 CI identities, 1 year of
+                      audit history.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Business</td>
+                    <td>From $1,499/month</td>
+                    <td>
+                      Larger estates: 10 agents, 50 sources, single sign-on, priority support.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Enterprise</td>
+                    <td>Custom quote</td>
+                    <td>Negotiated limits and terms, contract, invoice payment.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="box box-info">
+              <div class="box-title">Questions to discuss with the DataNivra team</div>
+              <ul>
+                <li>
+                  Which of our production databases are supported today, and which are "coming
+                  next"?
+                </li>
+                <li>What support response times will be written into our contract (SLA)?</li>
+                <li>Where will our agent run, and who in our team owns it?</li>
+                <li>
+                  Do we need the self-hosted control plane, or is the hosted service acceptable to
+                  our security team?
+                </li>
+              </ul>
+            </div>
+          </section>
+
+          <hr class="part-divider" />
+
+          <!-- CTA -->
+          <section class="part" style="text-align: center; padding-block: 56px 48px">
+            <h2
+              style="
+                font-family: 'Space Grotesk', sans-serif;
+                font-size: clamp(22px, 4vw, 32px);
+                font-weight: 700;
+                margin: 0 0 12px;
+                color: var(--fg);
+              "
+            >
+              Ready to get started?
+            </h2>
+            <p
+              style="color: var(--fg-muted); font-size: 16px; max-width: 520px; margin: 0 auto 28px"
+            >
+              Sign up free — no credit card, no installation required to try the hosted sandbox. Add
+              your own agent when you're ready.
+            </p>
+            <a
+              href="https://www.datanivra.com/start"
+              rel="noopener noreferrer"
+              style="
+                display: inline-block;
+                background: var(--accent);
+                color: #fff;
+                font-family: 'Space Grotesk', sans-serif;
+                font-weight: 600;
+                font-size: 16px;
+                padding: 14px 36px;
+                border-radius: 8px;
+                text-decoration: none;
+                letter-spacing: 0.01em;
+              "
+            >
+              Start free →
+            </a>
+            <p style="margin: 20px 0 0; font-size: 13px; color: var(--fg-muted)">
+              Already have an account?
+              <a
+                href="https://console.datanivra.com"
+                rel="noopener noreferrer"
+                style="color: var(--accent)"
+                >Sign in to the console</a
+              >
+            </p>
+          </section>
+
+          <hr class="part-divider" />
+
+          <!-- Reboot persistence warning -->
+          <section class="part">
+            <div class="part-header">
+              <h2 class="part-title">After rebooting your PC</h2>
+            </div>
+
+            <div class="box box-warn">
+              <div class="box-title">
+                Secret files disappear after a reboot — you must restore them
+              </div>
+              <p>
+                On some systems the agent's secrets directory is mounted on
+                <code>/run/datanivra-secrets/</code>, which is a <strong>tmpfs</strong> — a
+                RAM-based filesystem that is wiped clean every time the PC restarts. If your
+                <code>docker inspect</code> output shows
+                <code>/run/datanivra-secrets -&gt; /etc/datanivra/secrets</code>, all secret files
+                (connection files and masking key) must be restored after every reboot.
+              </p>
+              <p>
+                After a reboot, do these two things in the Ubuntu window before continuing your
+                evaluation:
+              </p>
+              <ol>
+                <li>
+                  <strong>Restore the secret files</strong> — re-run the E2 paste block:
+                  <pre><code>. "$HOME/datanivra-lab/passwords.env"
+printf '{"kind":"POSTGRESQL","host":"lab-source","port":5432,"dbname":"practice","user":"tdm_reader","password":"%s","sslmode":"disable"}' "$READER_PW" | sudo install -m 0600 -o 10001 -g 10001 /dev/stdin "$HOME/datanivra-secrets/lab-source.json"
+for env in qa synth ci; do
+  printf '{"kind":"POSTGRESQL","host":"lab-target","port":5432,"dbname":"practice","user":"tdm_loader","password":"%s","sslmode":"disable","schema":"%s_data"}' "$LOADER_PW" "$env" | sudo install -m 0600 -o 10001 -g 10001 /dev/stdin "$HOME/datanivra-secrets/lab-target-$env.json"
+done</code></pre>
+                  Also restore the masking key (re-run the F1 masking-key block with your stored
+                  key).
+                </li>
+                <li>
+                  <strong>Reconnect the agent to the lab network</strong> — Docker sometimes
+                  disconnects containers from custom networks on restart:
+                  <pre><code>docker network connect datanivra-lab datanivra-agent</code></pre>
+                </li>
+              </ol>
+              <p>
+                After these two steps, run the doctor check (E2) again to confirm everything is
+                green before continuing.
+              </p>
+            </div>
+          </section>
+
+          <hr class="part-divider" />
+
+          <!-- Troubleshooting -->
+          <section class="part">
+            <div class="part-header">
+              <h2 class="part-title">Troubleshooting</h2>
+            </div>
+
+            <div class="table-wrap">
+              <table class="guide-table">
+                <thead>
+                  <tr>
+                    <th>Symptom</th>
+                    <th>What to do</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Sign-in link says it is invalid</td>
+                    <td>Links work once and expire after 30 minutes. Request a new one.</td>
+                  </tr>
+                  <tr>
+                    <td>"Separation of duties" when approving</td>
+                    <td>Expected: approve with the other account (your approver).</td>
+                  </tr>
+                  <tr>
+                    <td>Agent not ACTIVE</td>
+                    <td>
+                      Check Docker Desktop is running; run <code>docker logs datanivra-agent</code>;
+                      create a new enrollment token if the old one expired.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td><code>SECRET_NOT_FOUND</code> in doctor</td>
+                    <td>
+                      The connection files in <code>~/datanivra-secrets/</code> are missing. Re-run
+                      the E2 paste block.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <code>SOURCE_REACHABLE FAIL</code> or <code>TARGET_REACHABLE FAIL</code>
+                    </td>
+                    <td>
+                      The agent is not on the <code>datanivra-lab</code> network. Run
+                      <code>docker network connect datanivra-lab datanivra-agent</code>.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>"A source with this name already exists" when registering</td>
+                    <td>
+                      The source was already created. Go to Connect → Data Sources and use the
+                      existing one.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>CLI says the code expired</td>
+                    <td>
+                      Run <code>datanivra login --url https://api.datanivra.com</code> again and
+                      approve within 10 minutes.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <code>USAGE: Invalid WorkloadTokenExchange: check tenant_slug</code> in GitHub
+                      Actions
+                    </td>
+                    <td>
+                      The <code>DATANIVRA_TENANT</code> variable was pasted with a hidden
+                      <code>\r\n</code> appended. Delete the variable and re-enter the slug by
+                      typing it manually.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td><code>INVALID_CREDENTIALS</code> (exit code 3) in GitHub Actions</td>
+                    <td>
+                      The <code>--url</code> flag is missing on the login command, or
+                      <code>DATANIVRA_TENANT</code> contains the UUID instead of the slug. Run
+                      <code>datanivra org tenant</code> locally to get the correct slug.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>GitHub run waits and times out</td>
+                    <td>
+                      Your PC or Docker Desktop was off, or the agent is not ACTIVE. Start it and
+                      re-run the workflow.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Doctor shows <code>SKIP</code> or <code>DEPENDENCY_FAILED</code></td>
+                    <td>
+                      A prerequisite check failed. Fix the first <code>FAIL</code> line you see
+                      (most often <code>SOURCE_REACHABLE FAIL</code>), then re-run the doctor
+                      command. Dependent checks will run once the root cause is resolved.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Secret files missing after reboot (<code>SECRET_NOT_FOUND</code>)</td>
+                    <td>
+                      Your secrets directory is on a <code>/run/</code> tmpfs that clears on reboot.
+                      Re-run the E2 paste block to restore the connection files, then run
+                      <code>docker network connect datanivra-lab datanivra-agent</code> to reconnect
+                      the agent.
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="box box-info">
+              <div class="box-title">Help</div>
+              <p>
+                <strong>support@datanivra.com</strong> (product questions) ·
+                <strong>sales@datanivra.com</strong> (plans and contracts) ·
+                <strong>security@datanivra.com</strong> (security questions) · Phone +1 (607)
+                361-3823, Mon–Fri 9am–5pm ET
+              </p>
+            </div>
+          </section>
+
+          <footer class="guide-footer">
+            <span
+              >DataNivra User Guide · v12 · November 2026 ·
+              <a
+                href="https://www.datanivra.com"
+                rel="noopener noreferrer"
+                style="color: var(--accent)"
+                >datanivra.com</a
+              ></span
+            >
+            <span
+              ><a
+                href="https://www.datanivra.com/start"
+                rel="noopener noreferrer"
+                style="color: var(--accent)"
+                >Start free</a
+              >
+              ·
+              <a href="mailto:support@datanivra.com" style="color: var(--accent)"
+                >support@datanivra.com</a
+              ></span
+            >
+          </footer>
+        </div>
+      </body>
+    </html>
+  </body>
+</html>
