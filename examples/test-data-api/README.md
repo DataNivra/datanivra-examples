@@ -68,6 +68,7 @@ the approved target, and release the data afterwards.
 | [23](scenarios/23-ttl-expiry-teardown/) | Temporary access expires | Cross-industry | Bash | DataNivra CLI | any | `LEASE_CERTIFIED_VERSION` | illustrative |
 | [24](scenarios/24-contract-testing-pact/) | Consumer/provider contract testing | Cross-industry | TypeScript | Pact | any | `BUILD_DATASET` | illustrative |
 | [25](scenarios/25-developer-local-sandbox/) | Developer: approved data in a private sandbox | Cross-industry | Bash | DataNivra CLI | none (laptop) | `BUILD_DATASET` | illustrative |
+| [26](scenarios/26-entity-resolution-metadata/) | Entity resolution metadata columns (`_dn_entity_resolution_key` / `_dn_entity_resolution_sources`) | Healthcare (multi-source) | Python | Python SDK | PostgreSQL (target) | `BUILD_DATASET` | requires identity graph + agent ≥ 0.6.2 |
 
 ## Validate, plan, run
 
