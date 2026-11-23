@@ -12,7 +12,7 @@ jobs:
       DATANIVRA_BASE_URL: https://api.datanivra.com
       DATANIVRA_CONFIG_DIR: /tmp/datanivra
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: astral-sh/setup-uv@v6
       - run: uv tool install datanivra-cli==0.3.0
       - name: Sign in as this pipeline
